@@ -542,6 +542,7 @@ function renderProducts(content){
         <td class="text-right">${pr?rs(pr.sell_price_pack):'-'}</td>
         <td class="text-right" style="color:var(--mu)">${pr?rs(pr.cost_price_base):'-'}</td>
         <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" data-history="${p.id}">History</button>
           <button class="btn btn-secondary btn-sm" data-price="${p.id}">New Price</button>
           <button class="btn btn-secondary btn-sm" data-stock="${p.id}">Stock</button>
           <button class="btn btn-secondary btn-sm" data-edit="${p.id}">Edit</button>
@@ -549,6 +550,7 @@ function renderProducts(content){
         </td>
       </tr>`;
     }).join('');
+    $$('[data-history]',body).forEach(b=>b.onclick=()=>openPriceHistory(DB.products.find(x=>x.id===b.dataset.history)));
     $$('[data-edit]',body).forEach(b=>b.onclick=()=>openProductForm(DB.products.find(x=>x.id===b.dataset.edit)));
     $$('[data-del]',body).forEach(b=>b.onclick=()=>deleteProduct(b.dataset.del));
     $$('[data-price]',body).forEach(b=>b.onclick=()=>openPriceForm(DB.products.find(x=>x.id===b.dataset.price)));
@@ -557,6 +559,34 @@ function renderProducts(content){
   $('#prod-search').oninput = renderTable;
   $('#add-prod').onclick = ()=>openProductForm();
   renderTable();
+}
+
+// NEW: Show all past prices
+function openPriceHistory(p){
+  const prices = DB.prices.filter(x => x.product_id === p.id).sort((a,b) => b.effective_date.localeCompare(a.effective_date));
+  openModal(`
+    <h2>Price History — ${esc(p.name)}</h2>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:14px">1 ${esc(p.pack_unit)} = ${fmtNum(p.pack_size)} ${esc(p.base_unit)}</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Effective Date</th><th class="text-right">Sell (${esc(p.base_unit)})</th><th class="text-right">Sell (${esc(p.pack_unit)})</th><th class="text-right">Cost (${esc(p.base_unit)})</th></tr></thead>
+        <tbody>
+          ${prices.length===0 ? '<tr><td colspan="4" class="empty">No price records</td></tr>' : 
+            prices.map(pr => `
+            <tr>
+              <td style="font-weight:500">${fmtDate(pr.effective_date)}</td>
+              <td class="text-right">${rs(pr.sell_price_base)}</td>
+              <td class="text-right">${rs(pr.sell_price_pack)}</td>
+              <td class="text-right" style="color:var(--mu)">${rs(pr.cost_price_base)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  `);
 }
 
 function openProductForm(existing){
@@ -1322,7 +1352,7 @@ function renderReports(content){
         </div>
       </div>
     </div>
-    <div class="stats-grid" id="r-stats"></div>
+    <div class="stats-grid" id="r-stats" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
     <div class="card" style="margin-bottom:16px">
       <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Invoice-wise Profit &amp; Margin</h2>
       <div class="table-wrap"><table>
@@ -1331,9 +1361,9 @@ function renderReports(content){
       </table></div>
     </div>
     <div class="card">
-      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Product-wise</h2>
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Detailed Sales (Product-wise)</h2>
       <div class="table-wrap"><table>
-        <thead><tr><th>Product</th><th class="text-right">Qty Sold</th><th class="text-right">Revenue</th><th class="text-right">Cost</th><th class="text-right">Profit</th></tr></thead>
+        <thead><tr><th>Product</th><th>Date</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Total</th><th class="text-right">Profit</th></tr></thead>
         <tbody id="r-prod-body"></tbody>
       </table></div>
     </div>`;
@@ -1342,37 +1372,34 @@ function renderReports(content){
     const from = $('#r-from').value, to = $('#r-to').value;
     if(!from || !to){ toast('Pick both dates','error'); return; }
     if(from > to){ toast('From cannot be after To','error'); return; }
+    
+    // Invoices and Items
     const invs = DB.invoices.filter(i=>i.invoice_date >= from && i.invoice_date <= to);
     const invsIds = invs.map(i=>i.id);
     const items = DB.invoice_items.filter(it=>invsIds.includes(it.invoice_id));
 
-    let revenue = 0, cost = 0;
-    const perProd = {};
+    // Supplier Bills (Purchases)
+    const bills = DB.supplier_bills.filter(b => b.bill_date >= from && b.bill_date <= to);
+    const totalPurchases = bills.reduce((s, b) => s + Number(b.total), 0);
+
+    let cost = 0;
     items.forEach(it=>{
-      revenue += Number(it.total)||0;
-      const itemCost = Number(it.base_qty)*Number(it.cost_price) / (Number(it.qty)||1) * Number(it.qty);
-      // Simpler: cost per unit * qty (where cost_price is per selling unit)
-      const c = Number(it.qty) * Number(it.cost_price);
-      cost += c;
-      const key = it.product_name;
-      if(!perProd[key]) perProd[key] = { name:it.product_name, unit:it.unit, qty:0, revenue:0, cost:0 };
-      perProd[key].qty += Number(it.qty);
-      perProd[key].revenue += Number(it.total)||0;
-      perProd[key].cost += c;
+      cost += Number(it.qty) * Number(it.cost_price);
     });
-    // adjust revenue to reflect discounts: use invoice totals
+    
     const totalRev = invs.reduce((s,i)=>s+Number(i.total),0);
-    const totalCost = cost;
-    const profit = totalRev - totalCost;
+    const profit = totalRev - cost;
     const margin = totalRev > 0 ? (profit/totalRev)*100 : 0;
 
+    // Stats Cards
     $('#r-stats').innerHTML = `
       <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value green">${rs(totalRev)}</div><div class="stat-sub">${invs.length} invoices</div></div>
-      <div class="stat-card"><div class="stat-label">Total Cost</div><div class="stat-value">${rs(totalCost)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Purchases</div><div class="stat-value blue">${rs(totalPurchases)}</div><div class="stat-sub">${bills.length} bills</div></div>
+      <div class="stat-card"><div class="stat-label">Cost of Goods Sold</div><div class="stat-value">${rs(cost)}</div></div>
       <div class="stat-card"><div class="stat-label">Profit</div><div class="stat-value ${profit>=0?'green':'red'}">${rs(profit)}</div></div>
       <div class="stat-card"><div class="stat-label">Margin</div><div class="stat-value ${margin>=0?'green':'red'}">${margin.toFixed(1)}%</div></div>`;
 
-    // invoice-wise
+    // Invoice-wise
     const rows = invs.map(inv=>{
       const c = DB.customers.find(x=>x.id===inv.customer_id);
       const its = items.filter(it=>it.invoice_id===inv.id);
@@ -1381,6 +1408,7 @@ function renderReports(content){
       const m = Number(inv.total) > 0 ? (p/Number(inv.total))*100 : 0;
       return { inv, cust:c, cost:ic, profit:p, margin:m };
     }).sort((a,b)=>b.inv.invoice_date.localeCompare(a.inv.invoice_date));
+    
     $('#r-body').innerHTML = rows.length===0?'<tr><td colspan="7" class="empty">No invoices</td></tr>'
       :rows.map(r=>`<tr>
         <td style="font-weight:500"><a href="#/invoice/${r.inv.id}">${esc(r.inv.invoice_no)}</a></td>
@@ -1392,15 +1420,35 @@ function renderReports(content){
         <td class="text-right" style="color:${r.margin>=0?'var(--gd)':'var(--r)'}">${r.margin.toFixed(1)}%</td>
       </tr>`).join('');
 
-    // product-wise
-    const prows = Object.values(perProd).sort((a,b)=>(b.revenue-b.cost)-(a.revenue-a.cost));
-    $('#r-prod-body').innerHTML = prows.length===0?'<tr><td colspan="5" class="empty">No data</td></tr>'
-      :prows.map(p=>`<tr>
-        <td style="font-weight:500">${esc(p.name)}</td>
-        <td class="text-right">${fmtNum(p.qty)} ${esc(p.unit)}</td>
-        <td class="text-right">${rs(p.revenue)}</td>
-        <td class="text-right" style="color:var(--mu)">${rs(p.cost)}</td>
-        <td class="text-right" style="font-weight:600;color:${(p.revenue-p.cost)>=0?'var(--gd)':'var(--r)'}">${rs(p.revenue-p.cost)}</td>
+    // Detailed Sales (Product-wise, showing each date and rate used)
+    const detailedSales = [];
+    invs.forEach(inv => {
+       const invItems = items.filter(it => it.invoice_id === inv.id);
+       invItems.forEach(it => {
+          const itCost = Number(it.qty) * Number(it.cost_price);
+          const itProfit = Number(it.total) - itCost;
+          detailedSales.push({
+             product: it.product_name,
+             date: inv.invoice_date,
+             qty: fmtNum(it.qty) + ' ' + it.unit,
+             rate: rs(it.sell_price),
+             total: Number(it.total),
+             profit: itProfit
+          });
+       });
+    });
+    
+    // Sort by product name, then by date
+    detailedSales.sort((a,b) => a.product.localeCompare(b.product) || a.date.localeCompare(b.date));
+
+    $('#r-prod-body').innerHTML = detailedSales.length===0?'<tr><td colspan="6" class="empty">No data</td></tr>'
+      :detailedSales.map(d=>`<tr>
+        <td style="font-weight:500">${esc(d.product)}</td>
+        <td>${fmtDate(d.date)}</td>
+        <td class="text-right">${d.qty}</td>
+        <td class="text-right">${d.rate}</td>
+        <td class="text-right">${rs(d.total)}</td>
+        <td class="text-right" style="color:${d.profit>=0?'var(--gd)':'var(--r)'}">${rs(d.profit)}</td>
       </tr>`).join('');
   }
 
