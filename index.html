@@ -1,1 +1,1504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Seed Shop Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+:root{--g:#16a34a;--gd:#15803d;--gl:#f0fdf4;--r:#dc2626;--rl:#fef2f2;--b:#2563eb;--bg:#f8fafc;--sf:#fff;--bd:#e2e8f0;--tx:#0f172a;--mu:#64748b;--rad:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--gd);text-decoration:none}button{font:inherit;cursor:pointer}input,select,textarea{font:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:10px;border:0;font-weight:500;font-size:13px;transition:.15s;white-space:nowrap}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:var(--g);color:#fff}.btn-primary:hover:not(:disabled){background:var(--gd)}
+.btn-secondary{background:#f1f5f9;color:var(--tx)}.btn-secondary:hover:not(:disabled){background:#e2e8f0}
+.btn-danger{background:var(--rl);color:var(--r)}
+.btn-sm{padding:6px 12px;font-size:12px}.btn-block{width:100%}
+.input{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--bd);background:#fff;font-size:14px;outline:none;transition:.15s}
+.input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+.label{display:block;font-size:12px;font-weight:500;color:var(--mu);margin-bottom:6px}
+.card{background:var(--sf);border-radius:var(--rad);border:1px solid var(--bd);padding:20px}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--sf);border-right:1px solid var(--bd);padding:20px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;margin-bottom:24px;cursor:pointer;color:inherit}
+.brand-logo{width:40px;height:40px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden}
+.brand-logo img{width:100%;height:100%;object-fit:cover}
+.brand-text{font-weight:700;font-size:15px;color:var(--gd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav{flex:1;display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:var(--mu);font-size:14px;font-weight:500;transition:.15s}
+.nav a:hover{background:var(--bg);color:var(--tx)}
+.nav a.active{background:var(--gl);color:var(--gd)}
+.sidebar-footer{border-top:1px solid var(--bd);padding-top:12px;display:flex;flex-direction:column;gap:4px}
+.main{flex:1;padding:24px;max-width:1200px;width:100%;margin:0 auto}
+.page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.page-header h1{font-size:22px;font-weight:700}.page-header p{color:var(--mu);font-size:13px;margin-top:4px}
+.page-actions{display:flex;gap:8px;flex-wrap:wrap}
+.mobile-header{display:none;padding:12px 16px;background:var(--sf);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:20;align-items:center;gap:10px}
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sf);border-top:1px solid var(--bd);z-index:30;padding:6px 0}
+.mobile-nav a{flex:1;text-align:center;font-size:10px;color:var(--mu);padding:6px 4px;font-weight:500}
+.mobile-nav a.active{color:var(--gd)}
+.mobile-nav a span{display:block;font-size:18px;margin-bottom:2px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rad);padding:16px}
+.stat-label{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.stat-value{font-size:22px;font-weight:700;margin-top:6px}
+.stat-value.green{color:var(--gd)}.stat-value.red{color:var(--r)}.stat-value.blue{color:var(--b)}
+.stat-sub{font-size:11px;color:var(--mu);margin-top:4px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;font-weight:600;color:var(--mu);padding:10px 12px;border-bottom:1px solid var(--bd);text-transform:uppercase;letter-spacing:.3px}
+td{padding:12px;border-bottom:1px solid var(--bd);font-size:13px}
+tr:last-child td{border-bottom:none}tr:hover td{background:var(--bg)}
+.text-right{text-align:right}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}
+.modal{background:#fff;border-radius:14px;padding:24px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:16px}
+.form-row{margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+#toast-root{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--tx);color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;animation:slideIn .2s;max-width:340px}
+.toast-success{background:var(--g)}.toast-error{background:var(--r)}
+@keyframes slideIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+.login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+.login-box{max-width:400px;width:100%;background:#fff;border-radius:16px;padding:32px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.login-box h1{font-size:24px;font-weight:700;color:var(--gd);text-align:center;margin-bottom:6px}
+.login-box p{text-align:center;color:var(--mu);font-size:13px;margin-bottom:24px}
+.empty{text-align:center;padding:40px 20px;color:var(--mu);font-size:14px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600}
+.badge-green{background:var(--gl);color:var(--gd)}.badge-red{background:var(--rl);color:var(--r)}.badge-gray{background:#f1f5f9;color:var(--mu)}
+.search-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar .input{flex:1;min-width:200px}
+.line-table{margin:12px 0;width:100%}.line-table td{padding:6px}.line-table .input{padding:8px;font-size:13px}
+@media(max-width:768px){
+  .sidebar{display:none}.mobile-header{display:flex}.mobile-nav{display:flex}
+  .main{padding:16px;padding-bottom:90px}.form-grid{grid-template-columns:1fr}.page-header h1{font-size:20px}
+}
+@media print{
+  @page{margin:12mm}
+  body *{visibility:hidden}
+  #print-area,#print-area *{visibility:visible}
+  #print-area{position:absolute;left:0;top:0;width:100%;padding:0;background:#fff!important}
+  .no-print{display:none!important}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+<script>
+/* ============================================================
+   SEED SHOP MANAGER
+   ============================================================ */
+const SUPABASE_URL = 'https://sscejmaostawltqngdfa.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_sxkp6in2tgXHTP54xfJbGA_-ghEUWUD';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth:{ autoRefreshToken:true, persistSession:true, detectSessionInUrl:true }
+});
 
+const DB = { products:[], prices:[], customers:[], payments:[], invoices:[], invoice_items:[], suppliers:[], supplier_bills:[], supplier_payments:[] };
+let SETTINGS = { shop_name:'Seed Shop', owner_name:'', address:'', phone:'', license:'', upi:'', logo:'' };
+let SESSION = null;
+
+/* ---------- HELPERS ---------- */
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtNum = n => { const v = Number(n||0); return v%1===0 ? String(v) : v.toFixed(2); };
+const fmtDate = d => { if(!d) return '-'; return new Date(String(d).slice(0,10)).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+function inr(n){
+  const num = Number(n||0); const neg = num<0; const s = Math.abs(num).toFixed(2);
+  const p = s.split('.'); let i = p[0];
+  if(i.length>3){ const l3=i.slice(-3), r=i.slice(0,-3); i=r.replace(/\B(?=(\d{2})+(?!\d))/g,',')+','+l3; }
+  return (neg?'-':'')+i+'.'+p[1];
+}
+const rs = n => '₹'+inr(n);
+function toast(msg,type='info'){
+  const el = document.createElement('div'); el.className='toast toast-'+type; el.textContent=msg;
+  $('#toast-root').appendChild(el); setTimeout(()=>el.remove(),3500);
+}
+function openModal(html,onMount){
+  $('#modal-root').innerHTML = `<div class="modal-overlay"><div class="modal">${html}</div></div>`;
+  $('#modal-root .modal-overlay').addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) closeModal(); });
+  if(onMount) onMount($('#modal-root'));
+}
+function closeModal(){ $('#modal-root').innerHTML=''; }
+window.closeModal = closeModal;
+
+/* ---------- PRICE RESOLUTION (CORE LOGIC) ---------- */
+/**
+ * Resolves the price record active on targetDate.
+ * Rule: most recent effective_date <= targetDate.
+ * Fallback ("first sale always old date stock"): if none exists, use the OLDEST record.
+ */
+function resolvePrice(productId, targetDate){
+  const relevant = DB.prices.filter(p => p.product_id === productId);
+  if(relevant.length === 0) return null;
+  // sort: effective_date desc, then created_at desc
+  const desc = [...relevant].sort((a,b)=>{
+    if(a.effective_date !== b.effective_date) return b.effective_date.localeCompare(a.effective_date);
+    return String(b.created_at||'').localeCompare(String(a.created_at||''));
+  });
+  for(const p of desc){ if(p.effective_date <= targetDate) return p; }
+  // fallback → oldest
+  return [...relevant].sort((a,b)=>a.effective_date.localeCompare(b.effective_date))[0];
+}
+
+/* ---------- DATA SYNC ---------- */
+async function syncDB(){
+  try{
+    const [p,pr,c,pay,i,it,su,sb_,sp,st] = await Promise.all([
+      sb.from('seeds_products').select('*').order('name'),
+      sb.from('seeds_prices').select('*').order('effective_date',{ascending:false}),
+      sb.from('seeds_customers').select('*').order('name'),
+      sb.from('seeds_payments').select('*'),
+      sb.from('seeds_invoices').select('*').order('invoice_date',{ascending:false}),
+      sb.from('seeds_invoice_items').select('*'),
+      sb.from('seeds_suppliers').select('*').order('name'),
+      sb.from('seeds_supplier_bills').select('*').order('bill_date',{ascending:false}),
+      sb.from('seeds_supplier_payments').select('*'),
+      sb.from('seeds_settings').select('*').eq('id',1).maybeSingle()
+    ]);
+    DB.products = p.data||[]; DB.prices = pr.data||[]; DB.customers = c.data||[];
+    DB.payments = pay.data||[]; DB.invoices = i.data||[]; DB.invoice_items = it.data||[];
+    DB.suppliers = su.data||[]; DB.supplier_bills = sb_.data||[]; DB.supplier_payments = sp.data||[];
+    if(st.data) SETTINGS = {...SETTINGS, ...st.data};
+  }catch(e){ toast('Load failed: '+e.message,'error'); }
+}
+async function saveSettings(){
+  const { error } = await sb.from('seeds_settings').upsert({
+    id:1, shop_name:SETTINGS.shop_name, owner_name:SETTINGS.owner_name,
+    address:SETTINGS.address, phone:SETTINGS.phone, license:SETTINGS.license,
+    upi:SETTINGS.upi, logo:SETTINGS.logo, updated_at:new Date().toISOString()
+  });
+  if(error){ toast('Save failed: '+error.message,'error'); return false; }
+  return true;
+}
+
+/* ---------- AUTH ---------- */
+async function initAuth(){
+  const { data:{session} } = await sb.auth.getSession();
+  SESSION = session;
+  sb.auth.onAuthStateChange((event,s)=>{
+    SESSION = s;
+    if(event==='SIGNED_OUT'){ location.hash='#/'; renderLogin(); }
+  });
+}
+async function login(email,password){
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if(error) throw error;
+  const { data:{session} } = await sb.auth.getSession();
+  SESSION = session;
+}
+async function logout(){ await sb.auth.signOut(); SESSION=null; location.hash='#/'; route(); }
+
+/* ---------- LOGIN ---------- */
+function renderLogin(){
+  $('#app').innerHTML = `
+    <div class="login-page">
+      <form id="login-form" class="login-box">
+        <h1>${esc(SETTINGS.shop_name||'Seed Shop')}</h1>
+        <p>Owner sign in</p>
+        <div class="form-row"><label class="label">Email</label><input class="input" type="email" id="l-email" required autocomplete="username"></div>
+        <div class="form-row"><label class="label">Password</label><input class="input" type="password" id="l-pwd" required autocomplete="current-password"></div>
+        <div id="l-err" style="color:var(--r);font-size:12px;display:none;margin-bottom:12px"></div>
+        <button class="btn btn-primary btn-block" type="submit" id="l-btn">Sign in</button>
+      </form>
+    </div>`;
+  $('#login-form').onsubmit = async e=>{
+    e.preventDefault();
+    const errEl = $('#l-err'); errEl.style.display='none';
+    const btn = $('#l-btn'); btn.disabled=true; btn.textContent='Signing in...';
+    try{
+      await login($('#l-email').value.trim(), $('#l-pwd').value);
+      await syncDB();
+      await route();
+    }catch(err){
+      errEl.textContent = err.message; errEl.style.display='block';
+      btn.disabled=false; btn.textContent='Sign in';
+    }
+  };
+}
+
+/* ---------- LAYOUT ---------- */
+const NAV = [
+  ['#/','📊','Dashboard'],
+  ['#/customers','👥','Customers'],
+  ['#/invoices','📄','Invoices'],
+  ['#/reports','📈','Reports']
+];
+function renderLayout(){
+  const hash = location.hash||'#/';
+  const navHTML = NAV.map(([h,i,l])=>{
+    const a = hash===h || (h!=='#/' && hash.startsWith(h)) ? 'active' : '';
+    return `<a href="${h}" class="${a}"><span style="font-size:16px">${i}</span>${l}</a>`;
+  }).join('');
+  const mnavHTML = NAV.map(([h,i,l])=>{
+    const a = hash===h || (h!=='#/' && hash.startsWith(h)) ? 'active' : '';
+    return `<a href="${h}" class="${a}"><span>${i}</span>${l}</a>`;
+  }).join('');
+  $('#app').innerHTML = `
+    <div class="layout">
+      <aside class="sidebar">
+        <a href="#/profile" class="brand">
+          <div class="brand-logo">${SETTINGS.logo?`<img src="${SETTINGS.logo}">`:'🌱'}</div>
+          <div class="brand-text">${esc(SETTINGS.shop_name||'Seed Shop')}</div>
+        </a>
+        <nav class="nav">${navHTML}</nav>
+        <div class="sidebar-footer">
+          <a href="#/products" class="btn btn-secondary" style="justify-content:flex-start">📦 Products</a>
+          <a href="#/suppliers" class="btn btn-secondary" style="justify-content:flex-start">🚚 Suppliers</a>
+          <a href="#/profile" class="btn btn-secondary" style="justify-content:flex-start">⚙️ Shop Profile</a>
+          <button id="btn-logout" class="btn btn-secondary" style="justify-content:flex-start;color:var(--r)">↪ Sign out</button>
+        </div>
+      </aside>
+      <div style="flex:1">
+        <header class="mobile-header">
+          <a href="#/profile" class="brand-logo" style="width:32px;height:32px;font-size:18px">${SETTINGS.logo?`<img src="${SETTINGS.logo}">`:'🌱'}</a>
+          <div style="font-weight:700;color:var(--gd)">${esc(SETTINGS.shop_name||'Seed Shop')}</div>
+        </header>
+        <main id="content" class="main"></main>
+      </div>
+    </div>
+    <nav class="mobile-nav">${mnavHTML}</nav>`;
+  $('#btn-logout').onclick = logout;
+}
+
+/* ---------- CUSTOMER DUE CALC ---------- */
+function customerDue(customerId){
+  const inv = DB.invoices.filter(i=>i.customer_id===customerId).reduce((s,i)=>s+Number(i.due),0);
+  const pay = DB.payments.filter(p=>p.customer_id===customerId).reduce((s,p)=>s+Number(p.amount),0);
+  return inv - pay;
+}
+function totalCustomerDue(){
+  return DB.invoices.reduce((s,i)=>s+Number(i.due),0) - DB.payments.reduce((s,p)=>s+Number(p.amount),0);
+}
+
+/* ---------- SUPPLIER DUE CALC ---------- */
+function supplierDue(supplierId){
+  const sup = DB.suppliers.find(s=>s.id===supplierId);
+  const open = Number(sup?.opening_balance||0);
+  const bills = DB.supplier_bills.filter(b=>b.supplier_id===supplierId);
+  const billTotal = bills.reduce((s,b)=>s+Number(b.total),0);
+  const billPaid = bills.reduce((s,b)=>s+Number(b.paid),0);
+  const extraPaid = DB.supplier_payments.filter(p=>p.supplier_id===supplierId).reduce((s,p)=>s+Number(p.amount),0);
+  return open + billTotal - billPaid - extraPaid;
+}
+
+/* ---------- DASHBOARD ---------- */
+function renderDashboard(content){
+  const today = todayStr();
+  const todayInvs = DB.invoices.filter(i=>i.invoice_date===today);
+  const todaySales = todayInvs.reduce((s,i)=>s+Number(i.total),0);
+  const todayDue = todayInvs.reduce((s,i)=>s+Number(i.due),0);
+  const totalDue = totalCustomerDue();
+  let stockValue = 0;
+  DB.products.forEach(p=>{
+    const pr = resolvePrice(p.id, today);
+    if(pr) stockValue += Number(p.stock)*Number(pr.cost_price_base||0);
+  });
+  const lowStock = DB.products.filter(p=>Number(p.stock)<=Number(p.low_stock_alert));
+  const recentInvs = DB.invoices.slice(0,5);
+
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Dashboard</h1><p>Welcome back${SETTINGS.owner_name?', '+esc(SETTINGS.owner_name):''}</p></div>
+      <div class="page-actions"><a href="#/invoice/new" class="btn btn-primary">+ New Invoice</a></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Today's Sales</div><div class="stat-value green">${rs(todaySales)}</div><div class="stat-sub">${todayInvs.length} invoices</div></div>
+      <div class="stat-card"><div class="stat-label">Today's Due</div><div class="stat-value red">${rs(todayDue)}</div></div>
+      <div class="stat-card"><div class="stat-label">Stock Value (Cost)</div><div class="stat-value blue">${rs(stockValue)}</div><div class="stat-sub">${DB.products.length} products</div></div>
+      <div class="stat-card"><div class="stat-label">Total Customer Due</div><div class="stat-value red">${rs(totalDue)}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="font-size:16px;font-weight:700">Products</h2>
+        <a href="#/products" class="btn btn-secondary btn-sm">Manage →</a>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><div style="font-size:11px;color:var(--mu);text-transform:uppercase;font-weight:600">Total</div><div style="font-size:20px;font-weight:700">${DB.products.length}</div></div>
+        <div><div style="font-size:11px;color:var(--mu);text-transform:uppercase;font-weight:600">Low Stock</div><div style="font-size:20px;font-weight:700;color:var(--r)">${lowStock.length}</div></div>
+      </div>
+      ${lowStock.length>0?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)">
+        <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">LOW STOCK</div>
+        ${lowStock.slice(0,5).map(p=>`<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px"><span>${esc(p.name)}</span><span style="color:var(--r);font-weight:600">${fmtNum(p.stock)} ${esc(p.base_unit)}</span></div>`).join('')}
+      </div>`:''}
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="font-size:16px;font-weight:700">Recent Invoices</h2>
+        <a href="#/invoices" class="btn btn-secondary btn-sm">View all →</a>
+      </div>
+      ${recentInvs.length===0?'<div class="empty">No invoices yet</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Due</th></tr></thead>
+          <tbody>${recentInvs.map(i=>{
+            const c = DB.customers.find(x=>x.id===i.customer_id);
+            return `<tr style="cursor:pointer" onclick="location.hash='#/invoice/${i.id}'">
+              <td style="font-weight:500">${esc(i.invoice_no)}</td>
+              <td>${esc(c?.name||'Walk-in')}</td>
+              <td>${fmtDate(i.invoice_date)}</td>
+              <td class="text-right">${rs(i.total)}</td>
+              <td class="text-right" style="color:${Number(i.due)>0?'var(--r)':'var(--mu)'}">${rs(i.due)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>`}
+    </div>`;
+}
+
+/* ---------- CUSTOMERS ---------- */
+function renderCustomers(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Customers</h1><p>Customer list and dues</p></div>
+      <div class="page-actions"><button id="add-cust" class="btn btn-primary">+ Add Customer</button></div>
+    </div>
+    <div class="search-bar"><input class="input" id="cust-search" placeholder="Search by name or phone..."></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Customers</div><div class="stat-value">${DB.customers.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Due</div><div class="stat-value red">${rs(totalCustomerDue())}</div></div>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Name</th><th>Phone</th><th class="text-right">Due</th><th></th></tr></thead>
+      <tbody id="cust-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const q = ($('#cust-search').value||'').toLowerCase();
+    const arr = DB.customers.filter(c=>!q || c.name.toLowerCase().includes(q) || (c.phone||'').includes(q));
+    const body = $('#cust-body');
+    if(arr.length===0){ body.innerHTML='<tr><td colspan="4" class="empty">No customers</td></tr>'; return; }
+    body.innerHTML = arr.map(c=>{
+      const due = customerDue(c.id);
+      return `<tr style="cursor:pointer" data-cust="${c.id}">
+        <td style="font-weight:500">${esc(c.name)}</td>
+        <td>${esc(c.phone||'-')}</td>
+        <td class="text-right" style="color:${due>0?'var(--r)':'var(--mu)'};font-weight:${due>0?'600':'400'}">${rs(due)}</td>
+        <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" data-pay="${c.id}">+ Payment</button>
+          <button class="btn btn-secondary btn-sm" data-edit="${c.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del="${c.id}">Del</button>
+        </td>
+      </tr>`;
+    }).join('');
+    $$('[data-edit]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();openCustomerForm(DB.customers.find(x=>x.id===b.dataset.edit));});
+    $$('[data-del]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();deleteCustomer(b.dataset.del);});
+    $$('[data-pay]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();openCustomerPayment(DB.customers.find(x=>x.id===b.dataset.pay));});
+    $$('[data-cust]',body).forEach(tr=>tr.onclick=()=>location.hash='#/customer/'+tr.dataset.cust);
+  }
+  $('#cust-search').oninput = renderTable;
+  $('#add-cust').onclick = ()=>openCustomerForm();
+  renderTable();
+}
+
+function openCustomerForm(existing){
+  const c = existing || { name:'', phone:'' };
+  openModal(`
+    <h2>${existing?'Edit Customer':'New Customer'}</h2>
+    <form id="cust-form">
+      <div class="form-row"><label class="label">Name *</label><input class="input" name="name" required value="${esc(c.name)}" autofocus></div>
+      <div class="form-row"><label class="label">Phone</label><input class="input" name="phone" value="${esc(c.phone||'')}"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="cf-save">${existing?'Update':'Save'}</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#cust-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = { name:fd.get('name').trim(), phone:fd.get('phone').trim() };
+      const btn = root.querySelector('#cf-save'); btn.disabled=true; btn.textContent='Saving...';
+      let result;
+      if(existing) result = await sb.from('seeds_customers').update(data).eq('id',existing.id);
+      else result = await sb.from('seeds_customers').insert(data).select().single();
+      if(result.error){ toast(result.error.message,'error'); btn.disabled=false; btn.textContent=existing?'Update':'Save'; return; }
+      await syncDB(); toast(existing?'Updated':'Customer added','success'); closeModal(); route();
+    };
+  });
+}
+async function deleteCustomer(id){
+  if(!confirm('Delete this customer? Their invoices will become Walk-in.')) return;
+  await sb.from('seeds_customers').delete().eq('id',id);
+  await syncDB(); toast('Deleted','success'); route();
+}
+function openCustomerPayment(c){
+  openModal(`
+    <h2>Record Payment — ${esc(c.name)}</h2>
+    <form id="pay-form">
+      <div class="form-row"><label class="label">Date</label><input class="input" type="date" name="date" required value="${todayStr()}"></div>
+      <div class="form-grid">
+        <div><label class="label">Amount (₹) *</label><input class="input" type="number" step="any" name="amount" required autofocus></div>
+        <div><label class="label">Mode</label><select class="input" name="mode"><option>cash</option><option>upi</option><option>bank</option></select></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" name="notes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="pay-save">Save</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#pay-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#pay-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_payments').insert({
+        customer_id:c.id, payment_date:fd.get('date'),
+        amount:Number(fd.get('amount'))||0, mode:fd.get('mode'), notes:fd.get('notes')
+      });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
+      await syncDB(); toast('Payment recorded','success'); closeModal(); route();
+    };
+  });
+}
+
+/* ---------- CUSTOMER PROFILE ---------- */
+function renderCustomerProfile(content, id){
+  const c = DB.customers.find(x=>x.id===id);
+  if(!c){ content.innerHTML='<div class="empty">Customer not found</div>'; return; }
+  const invs = DB.invoices.filter(i=>i.customer_id===id).sort((a,b)=>b.invoice_date.localeCompare(a.invoice_date));
+  const pays = DB.payments.filter(p=>p.customer_id===id).sort((a,b)=>b.payment_date.localeCompare(a.payment_date));
+  const due = customerDue(id);
+  const totalBought = invs.reduce((s,i)=>s+Number(i.total),0);
+  const totalPaid = invs.reduce((s,i)=>s+Number(i.paid),0) + pays.reduce((s,p)=>s+Number(p.amount),0);
+
+  content.innerHTML = `
+    <a href="#/customers" style="color:var(--mu);font-size:13px">← Back</a>
+    <div class="page-header" style="margin-top:12px">
+      <div><h1>${esc(c.name)}</h1><p>${esc(c.phone||'No phone')}</p></div>
+      <div class="page-actions">
+        <button id="btn-pay" class="btn btn-primary">+ Record Payment</button>
+        <button id="btn-edit" class="btn btn-secondary">Edit</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Bought</div><div class="stat-value">${rs(totalBought)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Paid</div><div class="stat-value green">${rs(totalPaid)}</div></div>
+      <div class="stat-card"><div class="stat-label">Due</div><div class="stat-value red">${rs(due)}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Invoices</h2>
+      ${invs.length===0?'<div class="empty">No invoices</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Invoice</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Due</th></tr></thead>
+          <tbody>${invs.map(i=>`<tr style="cursor:pointer" onclick="location.hash='#/invoice/${i.id}'">
+            <td style="font-weight:500">${esc(i.invoice_no)}</td>
+            <td>${fmtDate(i.invoice_date)}</td>
+            <td class="text-right">${rs(i.total)}</td>
+            <td class="text-right" style="color:${Number(i.due)>0?'var(--r)':'var(--mu)'}">${rs(i.due)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Later Payments</h2>
+      ${pays.length===0?'<div class="empty">No extra payments</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Mode</th><th>Notes</th><th class="text-right">Amount</th></tr></thead>
+          <tbody>${pays.map(p=>`<tr>
+            <td>${fmtDate(p.payment_date)}</td>
+            <td>${esc(p.mode||'-')}</td>
+            <td>${esc(p.notes||'-')}</td>
+            <td class="text-right" style="color:var(--gd);font-weight:600">${rs(p.amount)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>`;
+
+  $('#btn-pay').onclick = ()=>openCustomerPayment(c);
+  $('#btn-edit').onclick = ()=>openCustomerForm(c);
+}
+
+/* ---------- PRODUCTS ---------- */
+function renderProducts(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Products</h1><p>Seed inventory and price history</p></div>
+      <div class="page-actions"><button id="add-prod" class="btn btn-primary">+ Add Product</button></div>
+    </div>
+    <div class="search-bar"><input class="input" id="prod-search" placeholder="Search products..."></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Product</th><th class="text-right">Stock</th><th class="text-right">Sell (base)</th><th class="text-right">Sell (pack)</th><th class="text-right">Cost (base)</th><th></th></tr></thead>
+      <tbody id="prod-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const q = ($('#prod-search').value||'').toLowerCase();
+    const arr = DB.products.filter(p=>!q || p.name.toLowerCase().includes(q));
+    const body = $('#prod-body');
+    const today = todayStr();
+    if(arr.length===0){ body.innerHTML='<tr><td colspan="6" class="empty">No products yet</td></tr>'; return; }
+    body.innerHTML = arr.map(p=>{
+      const pr = resolvePrice(p.id, today);
+      const low = Number(p.stock)<=Number(p.low_stock_alert);
+      const badge = Number(p.stock)<=0?'<span class="badge badge-gray">OUT</span>':(low?'<span class="badge badge-red">LOW</span>':'<span class="badge badge-green">OK</span>');
+      return `<tr>
+        <td style="font-weight:500">${esc(p.name)} ${badge}<div style="font-size:11px;color:var(--mu)">1 ${esc(p.pack_unit)} = ${fmtNum(p.pack_size)} ${esc(p.base_unit)}</div></td>
+        <td class="text-right"><b>${fmtNum(p.stock)}</b> ${esc(p.base_unit)}</td>
+        <td class="text-right">${pr?rs(pr.sell_price_base):'-'}</td>
+        <td class="text-right">${pr?rs(pr.sell_price_pack):'-'}</td>
+        <td class="text-right" style="color:var(--mu)">${pr?rs(pr.cost_price_base):'-'}</td>
+        <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" data-price="${p.id}">New Price</button>
+          <button class="btn btn-secondary btn-sm" data-stock="${p.id}">Stock</button>
+          <button class="btn btn-secondary btn-sm" data-edit="${p.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del="${p.id}">Del</button>
+        </td>
+      </tr>`;
+    }).join('');
+    $$('[data-edit]',body).forEach(b=>b.onclick=()=>openProductForm(DB.products.find(x=>x.id===b.dataset.edit)));
+    $$('[data-del]',body).forEach(b=>b.onclick=()=>deleteProduct(b.dataset.del));
+    $$('[data-price]',body).forEach(b=>b.onclick=()=>openPriceForm(DB.products.find(x=>x.id===b.dataset.price)));
+    $$('[data-stock]',body).forEach(b=>b.onclick=()=>openStockForm(DB.products.find(x=>x.id===b.dataset.stock)));
+  }
+  $('#prod-search').oninput = renderTable;
+  $('#add-prod').onclick = ()=>openProductForm();
+  renderTable();
+}
+
+function openProductForm(existing){
+  const p = existing || { name:'', base_unit:'kg', pack_unit:'bag', pack_size:50, stock:0, low_stock_alert:5 };
+  const today = todayStr();
+  let sp = { sell_price_base:0, sell_price_pack:0, cost_price_base:0 };
+  if(existing){
+    const pr = resolvePrice(p.id, today);
+    if(pr) sp = pr;
+  }
+  openModal(`
+    <h2>${existing?'Edit Product':'New Product'}</h2>
+    <form id="prod-form">
+      <div class="form-row"><label class="label">Product Name *</label><input class="input" name="name" required value="${esc(p.name)}" autofocus></div>
+      <div class="form-grid">
+        <div><label class="label">Base Unit</label><select class="input" name="base_unit">
+          ${['kg','gram','lit','ml','piece','quintal','ton'].map(u=>`<option ${p.base_unit===u?'selected':''}>${u}</option>`).join('')}
+        </select></div>
+        <div><label class="label">Pack Unit</label><select class="input" name="pack_unit">
+          ${['bag','sack','box','bottle','packet','piece','tin'].map(u=>`<option ${p.pack_unit===u?'selected':''}>${u}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="label">1 pack = how many base units? *</label><input class="input" type="number" step="any" name="pack_size" required value="${p.pack_size}"></div>
+        <div><label class="label">Current Stock (in ${esc(p.base_unit)})</label><input class="input" type="number" step="any" name="stock" value="${p.stock}"></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="label">Low Stock Alert (${esc(p.base_unit)})</label><input class="input" type="number" step="any" name="low_alert" value="${p.low_stock_alert}"></div>
+        <div></div>
+      </div>
+      ${existing?'':`<hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">TODAY'S PRICES (effective from today)</div>
+      <div class="form-grid">
+        <div><label class="label">Sell Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_base" required value="${sp.sell_price_base}"></div>
+        <div><label class="label">Sell Price / ${esc(p.pack_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_pack" required value="${sp.sell_price_pack}"></div>
+      </div>
+      <div class="form-row"><label class="label">Cost Price / ${esc(p.base_unit)} (₹)</label><input class="input" type="number" step="any" name="cost_price_base" value="${sp.cost_price_base}"></div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 To change prices later, use the "New Price" button on the Products page.</p>`}
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="pf-save">${existing?'Update':'Save'}</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#prod-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#pf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const data = {
+        name:fd.get('name').trim(),
+        base_unit:fd.get('base_unit'),
+        pack_unit:fd.get('pack_unit'),
+        pack_size:Number(fd.get('pack_size'))||1,
+        stock:Number(fd.get('stock'))||0,
+        low_stock_alert:Number(fd.get('low_alert'))||0
+      };
+      let prodId;
+      if(existing){
+        const { error } = await sb.from('seeds_products').update(data).eq('id',existing.id);
+        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Update'; return; }
+        prodId = existing.id;
+      } else {
+        const { data:ins, error } = await sb.from('seeds_products').insert(data).select().single();
+        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
+        prodId = ins.id;
+        const { error:perr } = await sb.from('seeds_prices').upsert({
+          product_id:prodId, effective_date:todayStr(),
+          sell_price_base:Number(fd.get('sell_price_base'))||0,
+          sell_price_pack:Number(fd.get('sell_price_pack'))||0,
+          cost_price_base:Number(fd.get('cost_price_base'))||0
+        }, { onConflict:'product_id,effective_date' });
+        if(perr) toast('Product saved but price failed: '+perr.message,'error');
+      }
+      await syncDB(); toast(existing?'Updated':'Product added','success'); closeModal(); route();
+    };
+  });
+}
+async function deleteProduct(id){
+  if(!confirm('Delete this product? Price history will also be deleted.')) return;
+  await sb.from('seeds_products').delete().eq('id',id);
+  await syncDB(); toast('Deleted','success'); route();
+}
+
+function openPriceForm(p){
+  const today = todayStr();
+  const current = resolvePrice(p.id, today);
+  openModal(`
+    <h2>New Price — ${esc(p.name)}</h2>
+    <form id="price-form">
+      <div class="form-row"><label class="label">Effective Date *</label><input class="input" type="date" name="date" required value="${today}" max="${today}"></div>
+      <div class="form-grid">
+        <div><label class="label">Sell Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_base" required value="${current?current.sell_price_base:0}"></div>
+        <div><label class="label">Sell Price / ${esc(p.pack_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_pack" required value="${current?current.sell_price_pack:0}"></div>
+      </div>
+      <div class="form-row"><label class="label">Cost Price / ${esc(p.base_unit)} (₹)</label><input class="input" type="number" step="any" name="cost_price_base" value="${current?current.cost_price_base:0}"></div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 Future prices only apply to invoices on/after this date. Older invoices stay unchanged.</p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="prf-save">Save Price</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#price-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const date = fd.get('date');
+      if(date > today){ toast('Future dates not allowed','error'); return; }
+      const btn = root.querySelector('#prf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_prices').upsert({
+        product_id:p.id, effective_date:date,
+        sell_price_base:Number(fd.get('sell_price_base'))||0,
+        sell_price_pack:Number(fd.get('sell_price_pack'))||0,
+        cost_price_base:Number(fd.get('cost_price_base'))||0
+      }, { onConflict:'product_id,effective_date' });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save Price'; return; }
+      await syncDB(); toast('Price saved','success'); closeModal(); route();
+    };
+  });
+}
+
+function openStockForm(p){
+  openModal(`
+    <h2>Adjust Stock — ${esc(p.name)}</h2>
+    <div style="background:var(--bg);padding:12px;border-radius:10px;margin-bottom:14px;font-size:13px">
+      Current: <b>${fmtNum(p.stock)} ${esc(p.base_unit)}</b> = ${fmtNum(Number(p.stock)/Number(p.pack_size))} ${esc(p.pack_unit)}
+    </div>
+    <form id="stock-form">
+      <div class="form-grid">
+        <div><label class="label">Add / Deduct</label><select class="input" name="mode"><option value="add">Add (+)</option><option value="sub">Deduct (−)</option></select></div>
+        <div><label class="label">Unit</label><select class="input" name="unit"><option value="base">${esc(p.base_unit)}</option><option value="pack">${esc(p.pack_unit)}</option></select></div>
+      </div>
+      <div class="form-row"><label class="label">Quantity *</label><input class="input" type="number" step="any" name="qty" required autofocus></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="stf-save">Save</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#stock-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const qty = Number(fd.get('qty'))||0;
+      if(qty<=0){ toast('Qty must be > 0','error'); return; }
+      const isPack = fd.get('unit')==='pack';
+      const baseQty = isPack ? qty*Number(p.pack_size) : qty;
+      const delta = fd.get('mode')==='add' ? baseQty : -baseQty;
+      const newStock = Number(p.stock) + delta;
+      const btn = root.querySelector('#stf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_products').update({stock:newStock}).eq('id',p.id);
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
+      await syncDB(); toast('Stock updated','success'); closeModal(); route();
+    };
+  });
+}
+
+/* ---------- INVOICES ---------- */
+function renderInvoices(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Invoices</h1><p>All sales invoices</p></div>
+      <div class="page-actions"><a href="#/invoice/new" class="btn btn-primary">+ New Invoice</a></div>
+    </div>
+    <div class="search-bar"><input class="input" id="inv-search" placeholder="Search invoice or customer..."></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Due</th><th></th></tr></thead>
+      <tbody id="inv-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const q = ($('#inv-search').value||'').toLowerCase();
+    const arr = DB.invoices.filter(i=>{
+      const c = DB.customers.find(x=>x.id===i.customer_id);
+      const hay = (i.invoice_no+' '+(c?.name||'')+' '+(c?.phone||'')).toLowerCase();
+      return !q || hay.includes(q);
+    });
+    const body = $('#inv-body');
+    if(arr.length===0){ body.innerHTML='<tr><td colspan="7" class="empty">No invoices</td></tr>'; return; }
+    body.innerHTML = arr.map(i=>{
+      const c = DB.customers.find(x=>x.id===i.customer_id);
+      return `<tr>
+        <td style="font-weight:500"><a href="#/invoice/${i.id}">${esc(i.invoice_no)}</a></td>
+        <td>${esc(c?.name||'Walk-in')}</td>
+        <td>${fmtDate(i.invoice_date)}</td>
+        <td class="text-right">${rs(i.total)}</td>
+        <td class="text-right" style="color:var(--gd)">${rs(i.paid)}</td>
+        <td class="text-right" style="color:${Number(i.due)>0?'var(--r)':'var(--mu)'};font-weight:${Number(i.due)>0?'600':'400'}">${rs(i.due)}</td>
+        <td class="text-right"><button class="btn btn-danger btn-sm" data-del="${i.id}">Del</button></td>
+      </tr>`;
+    }).join('');
+    $$('[data-del]',body).forEach(b=>b.onclick=async()=>{
+      const inv = DB.invoices.find(x=>x.id===b.dataset.del);
+      if(!confirm('Delete invoice '+inv.invoice_no+'? Stock will be restored.')) return;
+      const items = DB.invoice_items.filter(it=>it.invoice_id===inv.id);
+      // restore stock
+      for(const it of items){
+        if(!it.product_id) continue;
+        const p = DB.products.find(x=>x.id===it.product_id);
+        if(p){
+          await sb.from('seeds_products').update({stock:Number(p.stock)+Number(it.base_qty)}).eq('id',p.id);
+        }
+      }
+      await sb.from('seeds_invoices').delete().eq('id',inv.id);
+      await syncDB(); toast('Deleted','success'); renderTable();
+    });
+  }
+  $('#inv-search').oninput = renderTable;
+  renderTable();
+}
+
+/* ---------- NEW INVOICE ---------- */
+function renderNewInvoice(content){
+  let lines = []; // {product_id, product_name, unit, qty, base_qty, pack_size, sell_price, cost_price, total}
+  let selectedCustomerId = null;
+
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>New Invoice</h1></div>
+      <div class="page-actions"><a href="#/invoices" class="btn btn-secondary">Cancel</a></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-grid">
+        <div><label class="label">Invoice Date *</label><input class="input" type="date" id="inv-date" value="${todayStr()}" max="${todayStr()}"></div>
+        <div><label class="label">Customer</label>
+          <div style="display:flex;gap:6px">
+            <select class="input" id="inv-customer"><option value="">— Walk-in —</option>
+              ${DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)}${c.phone?' · '+esc(c.phone):''}</option>`).join('')}
+            </select>
+            <button type="button" class="btn btn-secondary" id="btn-new-cust" style="padding:8px 12px">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <label class="label">Add Item</label>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <select class="input" id="add-prod-select">
+          <option value="">— Select product —</option>
+          ${DB.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+        </select>
+        <button type="button" class="btn btn-primary" id="btn-add-line">Add</button>
+      </div>
+      <div id="lines-box"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-grid">
+        <div><label class="label">Discount (₹)</label><input class="input" type="number" step="any" id="inv-disc" value="0"></div>
+        <div><label class="label">Paid Now (₹)</label><input class="input" type="number" step="any" id="inv-paid" value="0"></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" id="inv-notes"></div>
+      <div id="summary" style="background:var(--bg);padding:14px;border-radius:10px;font-size:14px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" id="btn-save" style="padding:12px 24px">Save Invoice</button>
+    </div>`;
+
+  function renderLines(){
+    const box = $('#lines-box');
+    if(lines.length===0){ box.innerHTML='<div class="empty" style="padding:20px">No items added yet</div>'; updateSummary(); return; }
+    box.innerHTML = `<div class="table-wrap"><table class="line-table">
+      <thead><tr><th>Item</th><th>Unit</th><th>Qty</th><th>Price</th><th class="text-right">Total</th><th></th></tr></thead>
+      <tbody>${lines.map((l,i)=>`
+        <tr>
+          <td>${esc(l.product_name)}</td>
+          <td><select class="input" data-i="${i}" data-f="unit">
+            <option value="base" ${l.unit==='base'?'selected':''}>${esc(l.base_unit)}</option>
+            <option value="pack" ${l.unit==='pack'?'selected':''}>${esc(l.pack_unit)}</option>
+          </select></td>
+          <td><input class="input" type="number" step="any" data-i="${i}" data-f="qty" value="${l.qty}" style="width:90px"></td>
+          <td><input class="input" type="number" step="any" data-i="${i}" data-f="sell_price" value="${l.sell_price}" style="width:110px"></td>
+          <td class="text-right" style="font-weight:600">${rs(l.total)}</td>
+          <td class="text-right"><button class="btn btn-danger btn-sm" data-del="${i}">×</button></td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+    $$('input[data-i]',box).forEach(inp=>inp.oninput=e=>{
+      const i=+e.target.dataset.i, f=e.target.dataset.f;
+      lines[i][f] = Number(e.target.value)||0;
+      recalcLine(i);
+      renderLines();
+    });
+    $$('select[data-i]',box).forEach(sel=>sel.onchange=e=>{
+      const i=+e.target.dataset.i;
+      lines[i].unit = e.target.value;
+      const pr = resolvePrice(lines[i].product_id, $('#inv-date').value);
+      if(pr){
+        lines[i].sell_price = lines[i].unit==='pack' ? Number(pr.sell_price_pack) : Number(pr.sell_price_base);
+        lines[i].cost_price = lines[i].unit==='pack' ? Number(pr.cost_price_base)*Number(lines[i].pack_size) : Number(pr.cost_price_base);
+      }
+      recalcLine(i);
+      renderLines();
+    });
+    $$('[data-del]',box).forEach(b=>b.onclick=()=>{ lines.splice(+b.dataset.del,1); renderLines(); });
+    updateSummary();
+  }
+  function recalcLine(i){
+    const l = lines[i];
+    l.base_qty = l.unit==='pack' ? Number(l.qty)*Number(l.pack_size) : Number(l.qty);
+    l.total = Number(l.qty)*Number(l.sell_price);
+  }
+  function updateSummary(){
+    const subtotal = lines.reduce((s,l)=>s+l.total,0);
+    const disc = Number($('#inv-disc').value)||0;
+    const total = Math.max(0, subtotal-disc);
+    const paid = Number($('#inv-paid').value)||0;
+    const due = Math.max(0, total-paid);
+    $('#summary').innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>${rs(subtotal)}</span></div>
+      ${disc>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Discount</span><span>−${rs(disc)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;border-top:1px solid var(--bd);padding-top:6px;margin-top:6px"><span>Total</span><span>${rs(total)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px"><span>Paid</span><span>${rs(paid)}</span></div>
+      <div style="display:flex;justify-content:space-between;color:${due>0?'var(--r)':'var(--mu)'};font-weight:600"><span>Due</span><span>${rs(due)}</span></div>`;
+  }
+  $('#inv-disc').oninput = updateSummary;
+  $('#inv-paid').oninput = updateSummary;
+
+  $('#btn-add-line').onclick = ()=>{
+    const pid = $('#add-prod-select').value;
+    if(!pid){ toast('Select a product','error'); return; }
+    const p = DB.products.find(x=>x.id===pid);
+    if(!p) return;
+    const invDate = $('#inv-date').value;
+    const pr = resolvePrice(p.id, invDate);
+    if(!pr){ toast('No price set for this product. Add a price first.','error'); return; }
+    // check if already in lines
+    const existing = lines.findIndex(l=>l.product_id===p.id && l.unit==='base');
+    if(existing>=0){
+      lines[existing].qty = Number(lines[existing].qty) + 1;
+      recalcLine(existing);
+      renderLines();
+      return;
+    }
+    lines.push({
+      product_id:p.id,
+      product_name:p.name,
+      base_unit:p.base_unit,
+      pack_unit:p.pack_unit,
+      pack_size:Number(p.pack_size),
+      unit:'base',
+      qty:1,
+      base_qty:1,
+      sell_price:Number(pr.sell_price_base),
+      cost_price:Number(pr.cost_price_base),
+      total:Number(pr.sell_price_base)
+    });
+    $('#add-prod-select').value = '';
+    renderLines();
+  };
+
+  $('#btn-new-cust').onclick = ()=>{
+    openModal(`
+      <h2>Quick Add Customer</h2>
+      <form id="quick-cust">
+        <div class="form-row"><label class="label">Name *</label><input class="input" name="name" required autofocus></div>
+        <div class="form-row"><label class="label">Phone</label><input class="input" name="phone"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="qcs">Save & Select</button>
+        </div>
+      </form>`, root=>{
+      root.querySelector('#quick-cust').onsubmit = async e=>{
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const btn = root.querySelector('#qcs'); btn.disabled=true; btn.textContent='Saving...';
+        const { data, error } = await sb.from('seeds_customers').insert({name:fd.get('name').trim(), phone:fd.get('phone').trim()}).select().single();
+        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save & Select'; return; }
+        await syncDB();
+        selectedCustomerId = data.id;
+        const sel = $('#inv-customer');
+        const opt = document.createElement('option');
+        opt.value = data.id; opt.textContent = data.name + (data.phone?' · '+data.phone:'');
+        sel.appendChild(opt); sel.value = data.id;
+        toast('Customer added','success'); closeModal();
+      };
+    });
+  };
+
+  $('#btn-save').onclick = async ()=>{
+    if(lines.length===0){ toast('Add at least one item','error'); return; }
+    const invDate = $('#inv-date').value;
+    if(!invDate){ toast('Pick invoice date','error'); return; }
+    if(invDate > todayStr()){ toast('Future dates not allowed','error'); return; }
+    // stock check
+    for(const l of lines){
+      const p = DB.products.find(x=>x.id===l.product_id);
+      if(p && Number(p.stock) < Number(l.base_qty)){
+        toast('Not enough stock: '+p.name,'error'); return;
+      }
+    }
+    const btn = $('#btn-save'); btn.disabled=true; btn.textContent='Saving...';
+
+    const subtotal = lines.reduce((s,l)=>s+l.total,0);
+    const disc = Number($('#inv-disc').value)||0;
+    const total = Math.max(0, subtotal-disc);
+    const paid = Number($('#inv-paid').value)||0;
+    const due = Math.max(0, total-paid);
+    const custId = $('#inv-customer').value || null;
+    const notes = $('#inv-notes').value;
+
+    // next invoice no
+    let maxN = 0;
+    DB.invoices.forEach(inv=>{ const m = String(inv.invoice_no).match(/(\d+)/); if(m) maxN = Math.max(maxN, parseInt(m[1])); });
+    const invoice_no = 'INV-' + String(maxN+1).padStart(4,'0');
+
+    const { data:invData, error:invErr } = await sb.from('seeds_invoices').insert({
+      invoice_no, customer_id:custId, invoice_date:invDate,
+      subtotal, discount:disc, total, paid, due, notes
+    }).select().single();
+    if(invErr){ toast(invErr.message,'error'); btn.disabled=false; btn.textContent='Save Invoice'; return; }
+
+    const itemsData = lines.map(l=>({
+      invoice_id:invData.id, product_id:l.product_id, product_name:l.product_name,
+      unit:l.unit==='pack'?l.pack_unit:l.base_unit,
+      qty:l.qty, pack_size:l.pack_size, base_qty:l.base_qty,
+      sell_price:l.sell_price, cost_price:l.cost_price, total:l.total
+    }));
+    const { error:itemErr } = await sb.from('seeds_invoice_items').insert(itemsData);
+    if(itemErr){ toast('Items failed: '+itemErr.message,'error'); await sb.from('seeds_invoices').delete().eq('id',invData.id); btn.disabled=false; btn.textContent='Save Invoice'; return; }
+
+    // deduct stock
+    for(const l of lines){
+      const p = DB.products.find(x=>x.id===l.product_id);
+      if(p) await sb.from('seeds_products').update({stock:Number(p.stock)-Number(l.base_qty)}).eq('id',p.id);
+    }
+
+    await syncDB();
+    toast('Invoice saved','success');
+    location.hash = '#/invoice/'+invData.id;
+  };
+
+  renderLines();
+}
+
+/* ---------- INVOICE VIEW ---------- */
+function renderInvoiceView(content, id){
+  const inv = DB.invoices.find(x=>x.id===id);
+  if(!inv){ content.innerHTML='<div class="empty">Invoice not found</div>'; return; }
+  const items = DB.invoice_items.filter(it=>it.invoice_id===id);
+  const cust = DB.customers.find(c=>c.id===inv.customer_id);
+
+  content.innerHTML = `
+    <a href="#/invoices" style="color:var(--mu);font-size:13px">← Back</a>
+    <div class="page-header" style="margin-top:12px">
+      <div><h1>Invoice ${esc(inv.invoice_no)}</h1><p>${fmtDate(inv.invoice_date)}</p></div>
+      <div class="page-actions">
+        <button class="btn btn-secondary" id="btn-print">Print</button>
+        <button class="btn btn-primary" id="btn-pdf">Download PDF</button>
+        <button class="btn btn-primary" id="btn-share" style="background:#25D366">WhatsApp Share</button>
+      </div>
+    </div>
+    <div class="card" id="print-area" style="max-width:760px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--g);padding-bottom:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--gd)">${esc(SETTINGS.shop_name||'Seed Shop')}</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:4px">${esc(SETTINGS.owner_name||'')}</div>
+          <div style="font-size:12px;color:var(--mu)">${esc(SETTINGS.address||'')}</div>
+          ${SETTINGS.phone?`<div style="font-size:12px;color:var(--mu)">Ph: ${esc(SETTINGS.phone)}</div>`:''}
+          ${SETTINGS.license?`<div style="font-size:12px;color:var(--mu)">License: ${esc(SETTINGS.license)}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700">${esc(inv.invoice_no)}</div>
+          <div style="font-size:12px;color:var(--mu)">${fmtDate(inv.invoice_date)}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--mu);text-transform:uppercase;font-weight:600">Bill to</div>
+        <div style="font-weight:600;margin-top:2px">${esc(cust?.name||'Walk-in Customer')}</div>
+        ${cust?.phone?`<div style="font-size:12px;color:var(--mu)">${esc(cust.phone)}</div>`:''}
+      </div>
+      <table style="margin-bottom:16px">
+        <thead><tr><th>Item</th><th>Unit</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>${items.map(it=>`<tr>
+          <td>${esc(it.product_name)}</td>
+          <td>${esc(it.unit)}</td>
+          <td class="text-right">${fmtNum(it.qty)}</td>
+          <td class="text-right">${rs(it.sell_price)}</td>
+          <td class="text-right">${rs(it.total)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end">
+        <div style="min-width:220px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Subtotal</span><span>${rs(inv.subtotal)}</span></div>
+          ${Number(inv.discount)>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Discount</span><span>−${rs(inv.discount)}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:15px;font-weight:700;border-top:1px solid var(--bd);margin-top:4px"><span>Total</span><span>${rs(inv.total)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Paid</span><span>${rs(inv.paid)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:${Number(inv.due)>0?'var(--r)':'var(--mu)'};font-weight:600"><span>Due</span><span>${rs(inv.due)}</span></div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--mu);margin-top:24px;padding-top:12px;border-top:1px solid var(--bd)">Thank you!</div>
+    </div>`;
+
+  $('#btn-print').onclick = ()=>window.print();
+  $('#btn-pdf').onclick = ()=>downloadInvoicePDF(inv, items, cust);
+  $('#btn-share').onclick = ()=>shareInvoicePDF(inv, items, cust);
+}
+
+/* ---------- PDF ---------- */
+function buildInvoicePDF(inv, items, cust){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 15;
+  doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor(22,163,74);
+  doc.text(SETTINGS.shop_name||'Seed Shop', 14, y); y += 6;
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(71,85,105);
+  if(SETTINGS.owner_name){ doc.text(SETTINGS.owner_name, 14, y); y += 4; }
+  if(SETTINGS.address){ doc.text(SETTINGS.address, 14, y, {maxWidth:100}); y += 4; }
+  if(SETTINGS.phone){ doc.text('Ph: '+SETTINGS.phone, 14, y); y += 4; }
+  if(SETTINGS.license){ doc.text('License: '+SETTINGS.license, 14, y); y += 4; }
+  doc.setTextColor(30,41,59); doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(inv.invoice_no, 196, 15, {align:'right'});
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text(fmtDate(inv.invoice_date), 196, 21, {align:'right'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('Bill To:', 14, y+6);
+  doc.setFont('helvetica','normal');
+  doc.text(cust?.name||'Walk-in Customer', 14, y+11);
+  if(cust?.phone) doc.text(cust.phone, 14, y+16);
+  y += 22;
+  doc.autoTable({
+    startY:y,
+    head:[['Item','Unit','Qty','Rate','Amount']],
+    body: items.map(it=>[it.product_name, it.unit, fmtNum(it.qty), rs(it.sell_price).replace('₹',''), rs(it.total).replace('₹','')]),
+    theme:'grid',
+    headStyles:{fillColor:[22,163,74],textColor:255,fontSize:10},
+    bodyStyles:{fontSize:9},
+    columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},
+    margin:{left:14,right:14}
+  });
+  y = doc.lastAutoTable.finalY + 8;
+  if(y > 250){ doc.addPage(); y = 20; }
+  const rightX = 196;
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Subtotal:', 140, y); doc.text(rs(inv.subtotal).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  if(Number(inv.discount)>0){ doc.text('Discount:', 140, y); doc.text('-'+rs(inv.discount).replace('₹',''), rightX, y, {align:'right'}); y += 5; }
+  doc.setFont('helvetica','bold'); doc.text('Total:', 140, y); doc.text(rs(inv.total).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  doc.setFont('helvetica','normal'); doc.text('Paid:', 140, y); doc.text(rs(inv.paid).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  doc.text('Due:', 140, y); doc.text(rs(inv.due).replace('₹',''), rightX, y, {align:'right'});
+  return doc;
+}
+function downloadInvoicePDF(inv, items, cust){
+  const doc = buildInvoicePDF(inv, items, cust);
+  doc.save(inv.invoice_no+'.pdf');
+}
+async function shareInvoicePDF(inv, items, cust){
+  try{
+    const doc = buildInvoicePDF(inv, items, cust);
+    const blob = doc.output('blob');
+    const file = new File([blob], inv.invoice_no+'.pdf', {type:'application/pdf'});
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file], title:'Invoice '+inv.invoice_no, text:'Invoice from '+(SETTINGS.shop_name||'Seed Shop')});
+      }catch(err){ if(err.name==='AbortError') return; throw err; }
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = inv.invoice_no+'.pdf'; a.click();
+      URL.revokeObjectURL(url);
+      toast('PDF downloaded — share on WhatsApp manually','info');
+    }
+  }catch(e){ toast('Share failed: '+e.message,'error'); }
+}
+
+/* ---------- SUPPLIERS ---------- */
+function renderSuppliers(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Suppliers</h1><p>Purchase bills and payments</p></div>
+      <div class="page-actions"><button id="add-sup" class="btn btn-primary">+ Add Supplier</button></div>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Supplier</th><th>Phone</th><th class="text-right">Bills</th><th class="text-right">Due</th><th></th></tr></thead>
+      <tbody id="sup-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const body = $('#sup-body');
+    if(DB.suppliers.length===0){ body.innerHTML='<tr><td colspan="5" class="empty">No suppliers</td></tr>'; return; }
+    body.innerHTML = DB.suppliers.map(s=>{
+      const due = supplierDue(s.id);
+      const billCount = DB.supplier_bills.filter(b=>b.supplier_id===s.id).length;
+      return `<tr style="cursor:pointer" data-sup="${s.id}">
+        <td style="font-weight:500">${esc(s.name)}</td>
+        <td>${esc(s.phone||'-')}</td>
+        <td class="text-right">${billCount}</td>
+        <td class="text-right" style="color:${due>0?'var(--r)':'var(--mu)'};font-weight:${due>0?'600':'400'}">${rs(due)}</td>
+        <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" data-edit="${s.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del="${s.id}">Del</button>
+        </td>
+      </tr>`;
+    }).join('');
+    $$('[data-edit]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();openSupplierForm(DB.suppliers.find(x=>x.id===b.dataset.edit));});
+    $$('[data-del]',body).forEach(b=>b.onclick=async e=>{
+      e.stopPropagation();
+      if(!confirm('Delete this supplier and all their bills?')) return;
+      await sb.from('seeds_suppliers').delete().eq('id',b.dataset.del);
+      await syncDB(); toast('Deleted','success'); renderTable();
+    });
+    $$('[data-sup]',body).forEach(tr=>tr.onclick=()=>location.hash='#/supplier/'+tr.dataset.sup);
+  }
+  $('#add-sup').onclick = ()=>openSupplierForm();
+  renderTable();
+}
+
+function openSupplierForm(existing){
+  const s = existing || {name:'', phone:'', opening_balance:0};
+  openModal(`
+    <h2>${existing?'Edit Supplier':'New Supplier'}</h2>
+    <form id="sup-form">
+      <div class="form-row"><label class="label">Name *</label><input class="input" name="name" required value="${esc(s.name)}" autofocus></div>
+      <div class="form-row"><label class="label">Phone</label><input class="input" name="phone" value="${esc(s.phone||'')}"></div>
+      <div class="form-row"><label class="label">Opening Balance (₹)</label><input class="input" type="number" step="any" name="opening_balance" value="${s.opening_balance||0}"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="sf-save">${existing?'Update':'Save'}</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#sup-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = {name:fd.get('name').trim(), phone:fd.get('phone').trim(), opening_balance:Number(fd.get('opening_balance'))||0};
+      const btn = root.querySelector('#sf-save'); btn.disabled=true; btn.textContent='Saving...';
+      let result;
+      if(existing) result = await sb.from('seeds_suppliers').update(data).eq('id',existing.id);
+      else result = await sb.from('seeds_suppliers').insert(data);
+      if(result.error){ toast(result.error.message,'error'); btn.disabled=false; btn.textContent=existing?'Update':'Save'; return; }
+      await syncDB(); toast(existing?'Updated':'Added','success'); closeModal(); route();
+    };
+  });
+}
+
+function renderSupplierProfile(content, id){
+  const s = DB.suppliers.find(x=>x.id===id);
+  if(!s){ content.innerHTML='<div class="empty">Supplier not found</div>'; return; }
+  const bills = DB.supplier_bills.filter(b=>b.supplier_id===id).sort((a,b)=>b.bill_date.localeCompare(a.bill_date));
+  const pays = DB.supplier_payments.filter(p=>p.supplier_id===id).sort((a,b)=>b.payment_date.localeCompare(a.payment_date));
+  const due = supplierDue(id);
+  const totalBills = bills.reduce((s,b)=>s+Number(b.total),0);
+  const totalPaid = bills.reduce((s,b)=>s+Number(b.paid),0) + pays.reduce((s,p)=>s+Number(p.amount),0) + Number(s.opening_balance||0);
+
+  content.innerHTML = `
+    <a href="#/suppliers" style="color:var(--mu);font-size:13px">← Back</a>
+    <div class="page-header" style="margin-top:12px">
+      <div><h1>${esc(s.name)}</h1><p>${esc(s.phone||'No phone')}</p></div>
+      <div class="page-actions">
+        <button id="btn-bill" class="btn btn-primary">+ Add Bill</button>
+        <button id="btn-pay" class="btn btn-secondary">+ Payment</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Bills</div><div class="stat-value">${rs(totalBills)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Paid</div><div class="stat-value green">${rs(totalPaid)}</div></div>
+      <div class="stat-card"><div class="stat-label">Due</div><div class="stat-value red">${rs(due)}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Bills</h2>
+      ${bills.length===0?'<div class="empty">No bills</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Bill No</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th><th></th></tr></thead>
+          <tbody>${bills.map(b=>`<tr>
+            <td>${esc(b.bill_no||'-')}</td>
+            <td>${fmtDate(b.bill_date)}</td>
+            <td class="text-right">${rs(b.total)}</td>
+            <td class="text-right" style="color:var(--gd)">${rs(b.paid)}</td>
+            <td class="text-right" style="color:var(--r)">${rs(Number(b.total)-Number(b.paid))}</td>
+            <td class="text-right"><button class="btn btn-danger btn-sm" data-del-bill="${b.id}">×</button></td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Payments</h2>
+      ${pays.length===0?'<div class="empty">No payments</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Mode</th><th>Notes</th><th class="text-right">Amount</th></tr></thead>
+          <tbody>${pays.map(p=>`<tr>
+            <td>${fmtDate(p.payment_date)}</td>
+            <td>${esc(p.mode||'-')}</td>
+            <td>${esc(p.notes||'-')}</td>
+            <td class="text-right" style="color:var(--gd);font-weight:600">${rs(p.amount)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>`;
+
+  $('#btn-bill').onclick = ()=>openBillForm(s);
+  $('#btn-pay').onclick = ()=>openSupplierPayment(s);
+  $$('[data-del-bill]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('Delete this bill?')) return;
+    await sb.from('seeds_supplier_bills').delete().eq('id',b.dataset.delBill);
+    await syncDB(); toast('Deleted','success'); route();
+  });
+}
+
+function openBillForm(s){
+  openModal(`
+    <h2>Add Bill — ${esc(s.name)}</h2>
+    <form id="bill-form">
+      <div class="form-grid">
+        <div><label class="label">Bill No</label><input class="input" name="bill_no"></div>
+        <div><label class="label">Bill Date *</label><input class="input" type="date" name="bill_date" required value="${todayStr()}"></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="label">Total (₹) *</label><input class="input" type="number" step="any" name="total" required></div>
+        <div><label class="label">Paid Now (₹)</label><input class="input" type="number" step="any" name="paid" value="0"></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" name="notes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="bf-save">Save Bill</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#bill-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#bf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_supplier_bills').insert({
+        supplier_id:s.id, bill_no:fd.get('bill_no'), bill_date:fd.get('bill_date'),
+        total:Number(fd.get('total'))||0, paid:Number(fd.get('paid'))||0, notes:fd.get('notes')
+      });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save Bill'; return; }
+      await syncDB(); toast('Bill added','success'); closeModal(); route();
+    };
+  });
+}
+function openSupplierPayment(s){
+  openModal(`
+    <h2>Pay Supplier — ${esc(s.name)}</h2>
+    <form id="sp-form">
+      <div class="form-row"><label class="label">Date</label><input class="input" type="date" name="date" required value="${todayStr()}"></div>
+      <div class="form-grid">
+        <div><label class="label">Amount (₹) *</label><input class="input" type="number" step="any" name="amount" required autofocus></div>
+        <div><label class="label">Mode</label><select class="input" name="mode"><option>cash</option><option>upi</option><option>bank</option><option>cheque</option></select></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" name="notes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="spf-save">Save</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#sp-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#spf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_supplier_payments').insert({
+        supplier_id:s.id, payment_date:fd.get('date'),
+        amount:Number(fd.get('amount'))||0, mode:fd.get('mode'), notes:fd.get('notes')
+      });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
+      await syncDB(); toast('Payment recorded','success'); closeModal(); route();
+    };
+  });
+}
+
+/* ---------- REPORTS ---------- */
+function renderReports(content){
+  const today = todayStr();
+  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Reports</h1><p>Sales, profit and margin</p></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+        <div><label class="label">From</label><input class="input" type="date" id="r-from" value="${firstOfMonth}" max="${today}"></div>
+        <div><label class="label">To</label><input class="input" type="date" id="r-to" value="${today}" max="${today}"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" data-preset="today">Today</button>
+          <button class="btn btn-secondary btn-sm" data-preset="week">This Week</button>
+          <button class="btn btn-secondary btn-sm" data-preset="month">This Month</button>
+          <button class="btn btn-secondary btn-sm" data-preset="year">This Year</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats-grid" id="r-stats"></div>
+    <div class="card" style="margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Invoice-wise Profit &amp; Margin</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-right">Revenue</th><th class="text-right">Cost</th><th class="text-right">Profit</th><th class="text-right">Margin</th></tr></thead>
+        <tbody id="r-body"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Product-wise</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Product</th><th class="text-right">Qty Sold</th><th class="text-right">Revenue</th><th class="text-right">Cost</th><th class="text-right">Profit</th></tr></thead>
+        <tbody id="r-prod-body"></tbody>
+      </table></div>
+    </div>`;
+
+  function load(){
+    const from = $('#r-from').value, to = $('#r-to').value;
+    if(!from || !to){ toast('Pick both dates','error'); return; }
+    if(from > to){ toast('From cannot be after To','error'); return; }
+    const invs = DB.invoices.filter(i=>i.invoice_date >= from && i.invoice_date <= to);
+    const invsIds = invs.map(i=>i.id);
+    const items = DB.invoice_items.filter(it=>invsIds.includes(it.invoice_id));
+
+    let revenue = 0, cost = 0;
+    const perProd = {};
+    items.forEach(it=>{
+      revenue += Number(it.total)||0;
+      const itemCost = Number(it.base_qty)*Number(it.cost_price) / (Number(it.qty)||1) * Number(it.qty);
+      // Simpler: cost per unit * qty (where cost_price is per selling unit)
+      const c = Number(it.qty) * Number(it.cost_price);
+      cost += c;
+      const key = it.product_name;
+      if(!perProd[key]) perProd[key] = { name:it.product_name, unit:it.unit, qty:0, revenue:0, cost:0 };
+      perProd[key].qty += Number(it.qty);
+      perProd[key].revenue += Number(it.total)||0;
+      perProd[key].cost += c;
+    });
+    // adjust revenue to reflect discounts: use invoice totals
+    const totalRev = invs.reduce((s,i)=>s+Number(i.total),0);
+    const totalCost = cost;
+    const profit = totalRev - totalCost;
+    const margin = totalRev > 0 ? (profit/totalRev)*100 : 0;
+
+    $('#r-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value green">${rs(totalRev)}</div><div class="stat-sub">${invs.length} invoices</div></div>
+      <div class="stat-card"><div class="stat-label">Total Cost</div><div class="stat-value">${rs(totalCost)}</div></div>
+      <div class="stat-card"><div class="stat-label">Profit</div><div class="stat-value ${profit>=0?'green':'red'}">${rs(profit)}</div></div>
+      <div class="stat-card"><div class="stat-label">Margin</div><div class="stat-value ${margin>=0?'green':'red'}">${margin.toFixed(1)}%</div></div>`;
+
+    // invoice-wise
+    const rows = invs.map(inv=>{
+      const c = DB.customers.find(x=>x.id===inv.customer_id);
+      const its = items.filter(it=>it.invoice_id===inv.id);
+      const ic = its.reduce((s,it)=>s+Number(it.qty)*Number(it.cost_price),0);
+      const p = Number(inv.total) - ic;
+      const m = Number(inv.total) > 0 ? (p/Number(inv.total))*100 : 0;
+      return { inv, cust:c, cost:ic, profit:p, margin:m };
+    }).sort((a,b)=>b.inv.invoice_date.localeCompare(a.inv.invoice_date));
+    $('#r-body').innerHTML = rows.length===0?'<tr><td colspan="7" class="empty">No invoices</td></tr>'
+      :rows.map(r=>`<tr>
+        <td style="font-weight:500"><a href="#/invoice/${r.inv.id}">${esc(r.inv.invoice_no)}</a></td>
+        <td>${esc(r.cust?.name||'Walk-in')}</td>
+        <td>${fmtDate(r.inv.invoice_date)}</td>
+        <td class="text-right">${rs(r.inv.total)}</td>
+        <td class="text-right" style="color:var(--mu)">${rs(r.cost)}</td>
+        <td class="text-right" style="font-weight:600;color:${r.profit>=0?'var(--gd)':'var(--r)'}">${rs(r.profit)}</td>
+        <td class="text-right" style="color:${r.margin>=0?'var(--gd)':'var(--r)'}">${r.margin.toFixed(1)}%</td>
+      </tr>`).join('');
+
+    // product-wise
+    const prows = Object.values(perProd).sort((a,b)=>(b.revenue-b.cost)-(a.revenue-a.cost));
+    $('#r-prod-body').innerHTML = prows.length===0?'<tr><td colspan="5" class="empty">No data</td></tr>'
+      :prows.map(p=>`<tr>
+        <td style="font-weight:500">${esc(p.name)}</td>
+        <td class="text-right">${fmtNum(p.qty)} ${esc(p.unit)}</td>
+        <td class="text-right">${rs(p.revenue)}</td>
+        <td class="text-right" style="color:var(--mu)">${rs(p.cost)}</td>
+        <td class="text-right" style="font-weight:600;color:${(p.revenue-p.cost)>=0?'var(--gd)':'var(--r)'}">${rs(p.revenue-p.cost)}</td>
+      </tr>`).join('');
+  }
+
+  $$('[data-preset]').forEach(b=>b.onclick=()=>{
+    const p = b.dataset.preset;
+    const to = todayStr();
+    let from = todayStr();
+    if(p==='week'){ const d=new Date(); const day=d.getDay()||7; const mon=new Date(d); mon.setDate(d.getDate()-day+1); from = mon.toISOString().slice(0,10); }
+    else if(p==='month') from = firstOfMonth;
+    else if(p==='year') from = new Date().getFullYear()+'-01-01';
+    $('#r-from').value = from; $('#r-to').value = to;
+    load();
+  });
+  $('#r-from').onchange = load;
+  $('#r-to').onchange = load;
+  load();
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile(content){
+  content.innerHTML = `
+    <div class="page-header"><div><h1>Shop Profile</h1></div></div>
+    <div class="card" style="max-width:600px">
+      <form id="profile-form">
+        <div class="form-row"><label class="label">Shop Name</label><input class="input" name="shop_name" value="${esc(SETTINGS.shop_name)}"></div>
+        <div class="form-row"><label class="label">Owner Name</label><input class="input" name="owner_name" value="${esc(SETTINGS.owner_name)}"></div>
+        <div class="form-row"><label class="label">Address</label><textarea class="input" name="address" rows="2">${esc(SETTINGS.address)}</textarea></div>
+        <div class="form-grid">
+          <div><label class="label">Phone</label><input class="input" name="phone" value="${esc(SETTINGS.phone)}"></div>
+          <div><label class="label">License</label><input class="input" name="license" value="${esc(SETTINGS.license)}"></div>
+        </div>
+        <div class="form-row"><label class="label">UPI ID</label><input class="input" name="upi" value="${esc(SETTINGS.upi)}"></div>
+        <div class="form-row">
+          <label class="label">Logo (URL or upload)</label>
+          <input class="input" name="logo" value="${esc(SETTINGS.logo)}" placeholder="https://..." style="margin-bottom:6px">
+          <input type="file" id="logo-file" accept="image/*" style="font-size:12px">
+        </div>
+        <button class="btn btn-primary" id="pf-save">Save</button>
+      </form>
+    </div>`;
+
+  $('#logo-file').onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev=>{ $('input[name="logo"]').value = ev.target.result; };
+    r.readAsDataURL(f);
+  };
+  $('#profile-form').onsubmit = async e=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    SETTINGS.shop_name = fd.get('shop_name');
+    SETTINGS.owner_name = fd.get('owner_name');
+    SETTINGS.address = fd.get('address');
+    SETTINGS.phone = fd.get('phone');
+    SETTINGS.license = fd.get('license');
+    SETTINGS.upi = fd.get('upi');
+    SETTINGS.logo = fd.get('logo');
+    const ok = await saveSettings();
+    if(ok){ toast('Saved','success'); route(); }
+  };
+}
+
+/* ---------- ROUTER ---------- */
+async function route(){
+  const hash = location.hash || '#/';
+  if(!SESSION){ renderLogin(); return; }
+  renderLayout();
+  const content = $('#content');
+  if(!content) return;
+  try{
+    if(hash==='#/' || hash==='') renderDashboard(content);
+    else if(hash==='#/customers') renderCustomers(content);
+    else if(hash.startsWith('#/customer/')) renderCustomerProfile(content, hash.slice(11));
+    else if(hash==='#/invoices') renderInvoices(content);
+    else if(hash==='#/invoice/new') renderNewInvoice(content);
+    else if(hash.startsWith('#/invoice/')) renderInvoiceView(content, hash.slice(10));
+    else if(hash==='#/products') renderProducts(content);
+    else if(hash==='#/suppliers') renderSuppliers(content);
+    else if(hash.startsWith('#/supplier/')) renderSupplierProfile(content, hash.slice(11));
+    else if(hash==='#/reports') renderReports(content);
+    else if(hash==='#/profile') renderProfile(content);
+    else renderDashboard(content);
+  }catch(e){
+    console.error(e);
+    content.innerHTML = '<div class="card" style="color:var(--r)">Error: '+esc(e.message)+'</div>';
+  }
+}
+window.addEventListener('hashchange', route);
+
+/* ---------- BOOT ---------- */
+(async ()=>{
+  $('#app').innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;color:var(--mu)">Loading...</div>';
+  try{
+    await initAuth();
+    if(SESSION){ await syncDB(); }
+  }catch(e){ console.error(e); }
+  await route();
+})();
+</script>
+</body>
+</html>
