@@ -535,6 +535,8 @@ function renderProducts(content){
       const pr = resolvePrice(p.id, today);
       const low = Number(p.stock)<=Number(p.low_stock_alert);
       const badge = Number(p.stock)<=0?'<span class="badge badge-gray">OUT</span>':(low?'<span class="badge badge-red">LOW</span>':'<span class="badge badge-green">OK</span>');
+      
+      // Notice the new buttons: "+ Stock & Price" and "Adjust"
       return `<tr>
         <td style="font-weight:500">${esc(p.name)} ${badge}<div style="font-size:11px;color:var(--mu)">1 ${esc(p.pack_unit)} = ${fmtNum(p.pack_size)} ${esc(p.base_unit)}</div></td>
         <td class="text-right"><b>${fmtNum(p.stock)}</b> ${esc(p.base_unit)}</td>
@@ -542,184 +544,111 @@ function renderProducts(content){
         <td class="text-right">${pr?rs(pr.sell_price_pack):'-'}</td>
         <td class="text-right" style="color:var(--mu)">${pr?rs(pr.cost_price_base):'-'}</td>
         <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-primary btn-sm" data-batch="${p.id}">+ Stock & Price</button>
           <button class="btn btn-secondary btn-sm" data-history="${p.id}">History</button>
-          <button class="btn btn-secondary btn-sm" data-price="${p.id}">New Price</button>
-          <button class="btn btn-secondary btn-sm" data-stock="${p.id}">Stock</button>
+          <button class="btn btn-secondary btn-sm" data-adjust="${p.id}">Adjust</button>
           <button class="btn btn-secondary btn-sm" data-edit="${p.id}">Edit</button>
           <button class="btn btn-danger btn-sm" data-del="${p.id}">Del</button>
         </td>
       </tr>`;
     }).join('');
+    
+    $$('[data-batch]',body).forEach(b=>b.onclick=()=>openNewBatchForm(DB.products.find(x=>x.id===b.dataset.batch)));
     $$('[data-history]',body).forEach(b=>b.onclick=()=>openPriceHistory(DB.products.find(x=>x.id===b.dataset.history)));
+    $$('[data-adjust]',body).forEach(b=>b.onclick=()=>openStockForm(DB.products.find(x=>x.id===b.dataset.adjust)));
     $$('[data-edit]',body).forEach(b=>b.onclick=()=>openProductForm(DB.products.find(x=>x.id===b.dataset.edit)));
     $$('[data-del]',body).forEach(b=>b.onclick=()=>deleteProduct(b.dataset.del));
-    $$('[data-price]',body).forEach(b=>b.onclick=()=>openPriceForm(DB.products.find(x=>x.id===b.dataset.price)));
-    $$('[data-stock]',body).forEach(b=>b.onclick=()=>openStockForm(DB.products.find(x=>x.id===b.dataset.stock)));
   }
   $('#prod-search').oninput = renderTable;
   $('#add-prod').onclick = ()=>openProductForm();
   renderTable();
 }
 
-// NEW: Show all past prices
-function openPriceHistory(p){
-  const prices = DB.prices.filter(x => x.product_id === p.id).sort((a,b) => b.effective_date.localeCompare(a.effective_date));
-  openModal(`
-    <h2>Price History — ${esc(p.name)}</h2>
-    <p style="font-size:13px;color:var(--mu);margin-bottom:14px">1 ${esc(p.pack_unit)} = ${fmtNum(p.pack_size)} ${esc(p.base_unit)}</p>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Effective Date</th><th class="text-right">Sell (${esc(p.base_unit)})</th><th class="text-right">Sell (${esc(p.pack_unit)})</th><th class="text-right">Cost (${esc(p.base_unit)})</th></tr></thead>
-        <tbody>
-          ${prices.length===0 ? '<tr><td colspan="4" class="empty">No price records</td></tr>' : 
-            prices.map(pr => `
-            <tr>
-              <td style="font-weight:500">${fmtDate(pr.effective_date)}</td>
-              <td class="text-right">${rs(pr.sell_price_base)}</td>
-              <td class="text-right">${rs(pr.sell_price_pack)}</td>
-              <td class="text-right" style="color:var(--mu)">${rs(pr.cost_price_base)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:16px">
-      <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
-    </div>
-  `);
-}
-
-function openProductForm(existing){
-  const p = existing || { name:'', base_unit:'kg', pack_unit:'bag', pack_size:50, stock:0, low_stock_alert:5 };
-  const today = todayStr();
-  let sp = { sell_price_base:0, sell_price_pack:0, cost_price_base:0 };
-  if(existing){
-    const pr = resolvePrice(p.id, today);
-    if(pr) sp = pr;
-  }
-  openModal(`
-    <h2>${existing?'Edit Product':'New Product'}</h2>
-    <form id="prod-form">
-      <div class="form-row"><label class="label">Product Name *</label><input class="input" name="name" required value="${esc(p.name)}" autofocus></div>
-      <div class="form-grid">
-        <div><label class="label">Base Unit</label><select class="input" name="base_unit">
-          ${['kg','gram','lit','ml','piece','quintal','ton'].map(u=>`<option ${p.base_unit===u?'selected':''}>${u}</option>`).join('')}
-        </select></div>
-        <div><label class="label">Pack Unit</label><select class="input" name="pack_unit">
-          ${['bag','sack','box','bottle','packet','piece','tin'].map(u=>`<option ${p.pack_unit===u?'selected':''}>${u}</option>`).join('')}
-        </select></div>
-      </div>
-      <div class="form-grid">
-        <div><label class="label">1 pack = how many base units? *</label><input class="input" type="number" step="any" name="pack_size" required value="${p.pack_size}"></div>
-        <div><label class="label">Current Stock (in ${esc(p.base_unit)})</label><input class="input" type="number" step="any" name="stock" value="${p.stock}"></div>
-      </div>
-      <div class="form-grid">
-        <div><label class="label">Low Stock Alert (${esc(p.base_unit)})</label><input class="input" type="number" step="any" name="low_alert" value="${p.low_stock_alert}"></div>
-        <div></div>
-      </div>
-      ${existing?'':`<hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
-      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">TODAY'S PRICES (effective from today)</div>
-      <div class="form-grid">
-        <div><label class="label">Sell Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_base" required value="${sp.sell_price_base}"></div>
-        <div><label class="label">Sell Price / ${esc(p.pack_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_pack" required value="${sp.sell_price_pack}"></div>
-      </div>
-      <div class="form-row"><label class="label">Cost Price / ${esc(p.base_unit)} (₹)</label><input class="input" type="number" step="any" name="cost_price_base" value="${sp.cost_price_base}"></div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 To change prices later, use the "New Price" button on the Products page.</p>`}
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="pf-save">${existing?'Update':'Save'}</button>
-      </div>
-    </form>`, root=>{
-    root.querySelector('#prod-form').onsubmit = async e=>{
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const btn = root.querySelector('#pf-save'); btn.disabled=true; btn.textContent='Saving...';
-      const data = {
-        name:fd.get('name').trim(),
-        base_unit:fd.get('base_unit'),
-        pack_unit:fd.get('pack_unit'),
-        pack_size:Number(fd.get('pack_size'))||1,
-        stock:Number(fd.get('stock'))||0,
-        low_stock_alert:Number(fd.get('low_alert'))||0
-      };
-      let prodId;
-      if(existing){
-        const { error } = await sb.from('seeds_products').update(data).eq('id',existing.id);
-        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Update'; return; }
-        prodId = existing.id;
-      } else {
-        const { data:ins, error } = await sb.from('seeds_products').insert(data).select().single();
-        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
-        prodId = ins.id;
-        const { error:perr } = await sb.from('seeds_prices').upsert({
-          product_id:prodId, effective_date:todayStr(),
-          sell_price_base:Number(fd.get('sell_price_base'))||0,
-          sell_price_pack:Number(fd.get('sell_price_pack'))||0,
-          cost_price_base:Number(fd.get('cost_price_base'))||0
-        }, { onConflict:'product_id,effective_date' });
-        if(perr) toast('Product saved but price failed: '+perr.message,'error');
-      }
-      await syncDB(); toast(existing?'Updated':'Product added','success'); closeModal(); route();
-    };
-  });
-}
-async function deleteProduct(id){
-  if(!confirm('Delete this product? Price history will also be deleted.')) return;
-  await sb.from('seeds_products').delete().eq('id',id);
-  await syncDB(); toast('Deleted','success'); route();
-}
-
-function openPriceForm(p){
+// 1. NEW: Add Stock & Price together (For new shipments)
+function openNewBatchForm(p){
   const today = todayStr();
   const current = resolvePrice(p.id, today);
+  
   openModal(`
-    <h2>New Price — ${esc(p.name)}</h2>
-    <form id="price-form">
-      <div class="form-row"><label class="label">Effective Date *</label><input class="input" type="date" name="date" required value="${today}" max="${today}"></div>
+    <h2>Add New Batch — ${esc(p.name)}</h2>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:14px">Current Stock: <b>${fmtNum(p.stock)} ${esc(p.base_unit)}</b></p>
+    
+    <form id="batch-form">
+      <div class="form-row">
+        <label class="label">How much new stock arrived? *</label>
+        <div style="display:flex;gap:6px">
+          <input class="input" type="number" step="any" name="qty" required value="1" autofocus>
+          <select class="input" name="unit" style="width:120px">
+            <option value="pack">${esc(p.pack_unit)}s</option>
+            <option value="base">${esc(p.base_unit)}</option>
+          </select>
+        </div>
+      </div>
+      
+      <hr style="border:0;border-top:1px solid var(--bd);margin:16px 0">
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">NEW PRICES (effective from today)</div>
+      
       <div class="form-grid">
+        <div><label class="label">Cost Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="cost_price_base" required value="${current?current.cost_price_base:0}"></div>
         <div><label class="label">Sell Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_base" required value="${current?current.sell_price_base:0}"></div>
+      </div>
+      <div class="form-grid">
         <div><label class="label">Sell Price / ${esc(p.pack_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_pack" required value="${current?current.sell_price_pack:0}"></div>
+        <div></div>
       </div>
-      <div class="form-row"><label class="label">Cost Price / ${esc(p.base_unit)} (₹)</label><input class="input" type="number" step="any" name="cost_price_base" value="${current?current.cost_price_base:0}"></div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 Future prices only apply to invoices on/after this date. Older invoices stay unchanged.</p>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
+      
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="prf-save">Save Price</button>
+        <button class="btn btn-primary" id="bf-save">Save Batch</button>
       </div>
-    </form>`, root=>{
-    root.querySelector('#price-form').onsubmit = async e=>{
+    </form>`, root => {
+    root.querySelector('#batch-form').onsubmit = async e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      const date = fd.get('date');
-      if(date > today){ toast('Future dates not allowed','error'); return; }
-      const btn = root.querySelector('#prf-save'); btn.disabled=true; btn.textContent='Saving...';
-      const { error } = await sb.from('seeds_prices').upsert({
-        product_id:p.id, effective_date:date,
-        sell_price_base:Number(fd.get('sell_price_base'))||0,
-        sell_price_pack:Number(fd.get('sell_price_pack'))||0,
-        cost_price_base:Number(fd.get('cost_price_base'))||0
-      }, { onConflict:'product_id,effective_date' });
-      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save Price'; return; }
-      await syncDB(); toast('Price saved','success'); closeModal(); route();
+      const btn = root.querySelector('#bf-save'); btn.disabled = true; btn.textContent = 'Saving...';
+      
+      const qty = Number(fd.get('qty')) || 0;
+      const isPack = fd.get('unit') === 'pack';
+      const baseQty = isPack ? qty * Number(p.pack_size) : qty;
+      const newStock = Number(p.stock) + baseQty;
+      
+      // 1. Update stock in products table
+      const { error: stkErr } = await sb.from('seeds_products').update({ stock: newStock }).eq('id', p.id);
+      if(stkErr){ toast(stkErr.message, 'error'); btn.disabled = false; btn.textContent = 'Save Batch'; return; }
+      
+      // 2. Insert/Update price for today
+      const { error: prErr } = await sb.from('seeds_prices').upsert({
+        product_id: p.id,
+        effective_date: today,
+        sell_price_base: Number(fd.get('sell_price_base')) || 0,
+        sell_price_pack: Number(fd.get('sell_price_pack')) || 0,
+        cost_price_base: Number(fd.get('cost_price_base')) || 0
+      }, { onConflict: 'product_id,effective_date' });
+      
+      if(prErr){ toast('Stock updated, but price failed: ' + prErr.message, 'error'); btn.disabled = false; btn.textContent = 'Save Batch'; return; }
+      
+      await syncDB();
+      toast('Stock added and new prices saved', 'success');
+      closeModal();
+      route();
     };
   });
 }
 
+// 2. ADJUST: For corrections (damage, spoilage, miscounts) — only changes stock, NOT price
 function openStockForm(p){
   openModal(`
     <h2>Adjust Stock — ${esc(p.name)}</h2>
-    <div style="background:var(--bg);padding:12px;border-radius:10px;margin-bottom:14px;font-size:13px">
-      Current: <b>${fmtNum(p.stock)} ${esc(p.base_unit)}</b> = ${fmtNum(Number(p.stock)/Number(p.pack_size))} ${esc(p.pack_unit)}
-    </div>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:14px">Current: <b>${fmtNum(p.stock)} ${esc(p.base_unit)}</b></p>
     <form id="stock-form">
       <div class="form-grid">
-        <div><label class="label">Add / Deduct</label><select class="input" name="mode"><option value="add">Add (+)</option><option value="sub">Deduct (−)</option></select></div>
+        <div><label class="label">Action</label><select class="input" name="mode"><option value="add">Add (+)</option><option value="sub">Deduct (−)</option></select></div>
         <div><label class="label">Unit</label><select class="input" name="unit"><option value="base">${esc(p.base_unit)}</option><option value="pack">${esc(p.pack_unit)}</option></select></div>
       </div>
       <div class="form-row"><label class="label">Quantity *</label><input class="input" type="number" step="any" name="qty" required autofocus></div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-primary" id="stf-save">Save</button>
+        <button class="btn btn-primary" id="stf-save">Save Adjustment</button>
       </div>
     </form>`, root=>{
     root.querySelector('#stock-form').onsubmit = async e=>{
@@ -734,11 +663,10 @@ function openStockForm(p){
       const btn = root.querySelector('#stf-save'); btn.disabled=true; btn.textContent='Saving...';
       const { error } = await sb.from('seeds_products').update({stock:newStock}).eq('id',p.id);
       if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
-      await syncDB(); toast('Stock updated','success'); closeModal(); route();
+      await syncDB(); toast('Stock adjusted','success'); closeModal(); route();
     };
   });
 }
-
 /* ---------- INVOICES ---------- */
 function renderInvoices(content){
   content.innerHTML = `
