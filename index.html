@@ -1935,5 +1935,59 @@ function renderInvoiceView(content, id){
   }
 }
 </style>
+  <style>
+/* ============================================================ */
+/* FROSTED GLASS EFFECT (Except Backdrop)                       */
+/* ============================================================ */
+
+/* Apply glass to cards, pills, modals, and dropdowns */
+.card, 
+.stat-card, 
+.vertical-pill, 
+.horizontal-pill, 
+.modal, 
+.login-box,
+.ss-dropdown,
+.calc {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
+}
+
+/* Make inputs semi-transparent */
+.input, select.input, textarea.input {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  background: rgba(255, 255, 255, 1) !important;
+  border-color: var(--g) !important;
+}
+
+/* Make secondary buttons slightly glassy */
+.btn-secondary {
+  background: rgba(241, 245, 249, 0.7) !important;
+  backdrop-filter: blur(4px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Adjust table row hover to be transparent */
+tr:hover td {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Ensure table headers have a glassy tint */
+th {
+  background: rgba(248, 250, 252, 0.5) !important;
+}
+
+/* Optional: Slight tint for the modal overlay so the glass pops */
+.modal-overlay {
+  background: rgba(15, 23, 42, 0.3) !important;
+  backdrop-filter: blur(4px); /* Adds a tiny blur to the background behind the modal */
+}
+</style>
 </body>
 </html>
