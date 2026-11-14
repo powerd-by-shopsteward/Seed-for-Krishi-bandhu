@@ -1901,5 +1901,39 @@ function renderInvoiceView(content, id){
   };
 })();
 </script>
+  <style>
+/* ============================================================ */
+/* PC OPTIMIZATION FOR FLOATING PILL LAYOUT                     */
+/* ============================================================ */
+@media (min-width: 1024px) {
+  /* Widen the main content area so it fits the screen better */
+  .main {
+    max-width: 1450px !important; 
+    padding: 40px 40px 120px 140px !important;
+  }
+
+  /* Make the dashboard stat cards slightly larger and more spaced */
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: 20px !important;
+    margin-bottom: 24px !important;
+  }
+
+  /* Increase padding in tables so they look premium */
+  th {
+    padding: 14px 20px !important;
+    font-size: 13px !important;
+  }
+  td {
+    padding: 16px 20px !important;
+    font-size: 14px !important;
+  }
+
+  /* Give cards a little more breathing room */
+  .card {
+    padding: 24px !important;
+  }
+}
+</style>
 </body>
 </html>
