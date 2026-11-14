@@ -2053,120 +2053,148 @@ async function shareInvoicePDF(inv, items, cust){
 }
 </script>
 <!-- ========================================== -->
-<!-- NEW LOGIN SCREEN WITH YOUR LOCAL PNG       -->
+<!-- SPLIT GLASSMORPHISM LOGIN (NO IMAGES)      -->
 <!-- ========================================== -->
 <style>
-/* Hide pills on login page & reset background */
-body:has(.login-page) { margin: 0; overflow: hidden; background: #ffffff; }
+/* Hide pills and reset background for login */
+body:has(.login-page) { margin: 0; overflow: hidden; background: #022c22 !important; }
 .vertical-pill, .horizontal-pill { display: none !important; }
 
 /* Fullscreen Split Container */
 .login-page { 
   position: fixed; inset: 0; z-index: 9999; 
   display: flex; align-items: stretch;
-  background: #ffffff !important;
+  background: #022c22; /* Deep dark green base */
 }
 
-/* Left Side: Green Brand Panel */
+/* Left Side: Cream Green Brand Panel */
 .login-brand-side {
   flex: 1;
-  background: #16a34a;
-  color: #ffffff;
+  background: #ecfdf5; /* Cream green */
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 40px;
   text-align: center;
+  border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-/* The Picture */
-.login-brand-side img {
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 50%; /* Makes the image a perfect circle */
-  border: 4px solid rgba(255,255,255,0.3);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  margin-bottom: 24px;
-  background: #ffffff; /* In case your png has a transparent background */
-}
-
-/* The Text */
+/* Left Side Typography */
 .login-brand-side h1 {
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
+  font-size: 48px;
+  font-weight: 900;
+  color: #064e3b; /* Deep green */
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+  line-height: 1.1;
 }
 .login-brand-side p {
   font-size: 16px;
-  color: #dcfce7;
-  font-weight: 500;
+  color: #047857; /* Mid green */
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
-/* Right Side: White Form Panel */
-.login-box {
+/* Right Side: Deep Green Form Area */
+.login-form-side {
   flex: 1;
-  background: #ffffff !important;
-  border: none !important; box-shadow: none !important;
-  max-width: 100% !important;
-  padding: 0 12% !important;
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
+  padding: 20px;
 }
 
-/* Form Styling */
-.login-box h2 { color: #0f172a !important; font-weight: 800; font-size: 28px; margin-bottom: 6px; }
-.login-box p { color: #64748b !important; margin-bottom: 30px; font-size: 15px; }
-.login-box .label { color: #475569 !important; font-weight: 600; margin-top: 15px; }
-.login-box .input { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; padding: 14px !important; border-radius: 10px !important; }
-.login-box .input:focus { border-color: #16a34a !important; background: #ffffff !important; box-shadow: 0 0 0 4px rgba(22,163,74,0.1) !important; }
-.login-box .btn-primary { background: #16a34a !important; font-size: 16px; padding: 14px !important; margin-top: 25px; border-radius: 10px !important; }
+/* The Glassmorphism Login Box */
+.login-box {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  padding: 50px !important;
+  border-radius: 24px !important;
+  max-width: 440px !important;
+  width: 100% !important;
+}
+
+/* Form Text */
+.login-box h2 { color: #ecfdf5 !important; font-weight: 800; font-size: 28px; margin-bottom: 6px; }
+.login-box p { color: #a7f3d0 !important; margin-bottom: 30px; font-size: 15px; }
+
+/* Inputs */
+.login-box .label { color: #a7f3d0 !important; font-weight: 600; margin-top: 15px; }
+.login-box .input { 
+  background: rgba(0, 0, 0, 0.2) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+  color: #ecfdf5 !important; 
+  padding: 16px !important; 
+  border-radius: 12px !important; 
+  font-size: 15px;
+}
+.login-box .input:focus { 
+  border-color: #34d399 !important; 
+  background: rgba(0, 0, 0, 0.4) !important; 
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15) !important; 
+}
+
+/* Button */
+.login-box .btn-primary { 
+  background: #10b981 !important; 
+  color: #022c22 !important; 
+  font-weight: 800 !important; 
+  font-size: 16px !important; 
+  padding: 16px !important; 
+  margin-top: 30px; 
+  border-radius: 12px !important; 
+  transition: 0.2s;
+}
+.login-box .btn-primary:hover {
+  background: #34d399 !important;
+  transform: translateY(-2px);
+}
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .login-page { flex-direction: column !important; overflow-y: auto; }
   .login-brand-side { flex: none; padding: 60px 20px; }
-  .login-brand-side img { width: 110px; height: 110px; }
-  .login-brand-side h1 { font-size: 28px; }
-  .login-box { padding: 40px 20px !important; }
+  .login-brand-side h1 { font-size: 36px; }
+  .login-form-side { padding: 40px 20px; }
+  .login-box { padding: 30px !important; }
 }
 </style>
 
 <script>
 (function() {
-  // Override the login function to include your picture
+  // Override the login function to build the new split layout
   window.renderLogin = function() {
-    
-    // 👇 CHANGE 'logo.png' TO YOUR ACTUAL FILE NAME IF IT IS DIFFERENT
-    const pictureUrl = SETTINGS.logo || 'logo.png'; 
-    
     document.getElementById('app').innerHTML = `
       <div class="login-page">
         
-        <!-- Left Side: Picture & Brand -->
+        <!-- Left Side: Cream Green Brand -->
         <div class="login-brand-side">
-          <img src="${pictureUrl}" alt="Shop Logo">
-          <h1>${esc(SETTINGS.shop_name||'KRISHI BANDHU')}</h1>
+          <h1>KRISHI<br>BANDHU</h1>
           <p>Seed Shop Manager</p>
         </div>
 
-        <!-- Right Side: Login Form -->
-        <form id="login-form" class="login-box">
-          <h2>Welcome Back</h2>
-          <p>Sign in to manage your shop</p>
-          
-          <div class="form-row">
-            <label class="label">Email</label>
-            <input class="input" type="email" id="l-email" required autocomplete="username">
-          </div>
-          
-          <div class="form-row">
-            <label class="label">Password</label>
-            <input class="input" type="password" id="l-pwd" required autocomplete="current-password">
-          </div>
-          
-          <div id="l-err" style="color:var(--r);font-size:12px;display:none;margin-bottom:12px;margin-top:10px;"></div>
-          
-          <button class="btn btn-primary btn-block" type="submit" id="l-btn">Sign in</button>
-        </form>
+        <!-- Right Side: Dark Green Glass Form -->
+        <div class="login-form-side">
+          <form id="login-form" class="login-box">
+            <h2>Welcome Back</h2>
+            <p>Sign in to manage your shop</p>
+            
+            <div class="form-row">
+              <label class="label">Email</label>
+              <input class="input" type="email" id="l-email" required autocomplete="username">
+            </div>
+            
+            <div class="form-row">
+              <label class="label">Password</label>
+              <input class="input" type="password" id="l-pwd" required autocomplete="current-password">
+            </div>
+            
+            <div id="l-err" style="color:#fca5a5;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;"></div>
+            
+            <button class="btn btn-primary btn-block" type="submit" id="l-btn">Sign in</button>
+          </form>
+        </div>
         
       </div>`;
 
