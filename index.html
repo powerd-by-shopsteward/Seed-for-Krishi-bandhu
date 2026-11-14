@@ -1780,5 +1780,126 @@ function renderInvoiceView(content, id){
   $('#btn-share').onclick = ()=>shareInvoicePDF(inv, items, cust);
 }
 </script>
+  <!-- ========================================== -->
+<!-- FLOATING PILL LAYOUT OVERRIDE -->
+<!-- ========================================== -->
+<style>
+/* Hide old layout */
+.sidebar, .mobile-nav, .mobile-header { display: none !important; }
+
+/* Adjust main content to make room for pills */
+.layout { display: block !important; }
+.main { padding: 40px 20px 120px 120px !important; max-width: 1200px; width: 100%; margin: 0 auto; }
+
+/* Left Vertical Pill */
+.vertical-pill {
+  position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+  background: var(--sf); border-radius: 40px; padding: 12px 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; gap: 8px; z-index: 100;
+  border: 1px solid var(--bd);
+}
+
+/* Bottom Horizontal Pill */
+.horizontal-pill {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  background: var(--sf); border-radius: 40px; padding: 0 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  display: flex; align-items: center; gap: 8px; height: 64px; z-index: 100;
+  border: 1px solid var(--bd);
+}
+
+/* Pill Links & Buttons */
+.pill-link {
+  position: relative; width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--mu); font-size: 20px; text-decoration: none; transition: 0.2s;
+  background: transparent; border: none; cursor: pointer;
+}
+.pill-link:hover { background: var(--bg); color: var(--tx); }
+.pill-link.active { background: var(--gl); color: var(--gd); }
+
+/* Tooltips */
+.pill-tooltip {
+  position: absolute; background: #1e293b; color: #fff;
+  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+  white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: 0.2s; z-index: 101;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* Tooltip Positions */
+.vertical-pill .pill-link .pill-tooltip { left: 60px; top: 50%; transform: translateY(-50%) translateX(-10px); }
+.vertical-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
+
+.horizontal-pill .pill-link .pill-tooltip { bottom: 60px; left: 50%; transform: translateX(-50%) translateY(10px); }
+.horizontal-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+
+/* Mobile Adjustments */
+@media(max-width: 768px) {
+  .vertical-pill { left: 10px; padding: 8px 0; }
+  .pill-link { width: 40px; height: 40px; font-size: 18px; }
+  .vertical-pill .pill-link .pill-tooltip { left: 50px; }
+  .main { padding: 20px 10px 100px 70px !important; }
+  .horizontal-pill { bottom: 10px; padding: 0 8px; height: 56px; gap: 4px; }
+  .horizontal-pill .pill-link { width: 40px; height: 40px; font-size: 18px; }
+}
+</style>
+
+<script>
+(function() {
+  // Override the original renderLayout function
+  window.renderLayout = function() {
+    const hash = location.hash || '#/';
+    
+    // Primary Navigation (Left Vertical Pill)
+    const primaryNAV = [
+      ['#/', '📊', 'Dashboard'],
+      ['#/customers', '👥', 'Customers'],
+      ['#/invoices', '📄', 'Invoices'],
+      ['#/reports', '📈', 'Reports']
+    ];
+    
+    // Secondary Navigation (Bottom Horizontal Pill)
+    const secondaryNAV = [
+      ['#/products', '📦', 'Products'],
+      ['#/suppliers', '🚚', 'Suppliers'],
+      ['#/profile', '⚙️', 'Shop Profile']
+    ];
+
+    const vnavHTML = primaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    const hnavHTML = secondaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    document.getElementById('app').innerHTML = `
+      <div class="layout">
+        <!-- Left Vertical Pill -->
+        <nav class="vertical-pill">
+          ${vnavHTML}
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="content" class="main"></main>
+        
+        <!-- Bottom Horizontal Pill -->
+        <nav class="horizontal-pill">
+          ${hnavHTML}
+          <div style="width:1px; height:24px; background:var(--bd); margin:0 4px;"></div>
+          <button id="btn-logout" class="pill-link" style="color:var(--r)">
+            <span>↪</span>
+            <span class="pill-tooltip">Sign out</span>
+          </button>
+        </nav>
+      </div>`;
+      
+    document.getElementById('btn-logout').onclick = logout;
+  };
+})();
+</script>
 </body>
 </html>
