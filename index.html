@@ -2053,64 +2053,66 @@ async function shareInvoicePDF(inv, items, cust){
 }
 </script>
 <!-- ========================================== -->
-<!-- ANGLED SPLIT GLASSMORPHISM LOGIN           -->
+<!-- DARK GREY ANGLED SPLIT GLASS LOGIN         -->
 <!-- ========================================== -->
 <style>
 /* Hide pills and reset background */
-body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !important; }
+body:has(.login-page) { margin: 0; overflow: hidden; background: #1a1a1a !important; }
 .vertical-pill, .horizontal-pill { display: none !important; }
 
 /* The Split Container */
 .login-page { 
   position: fixed; inset: 0; z-index: 9999; 
   display: flex; 
-  background: #ecfdf5; /* Cream Green Base */
+  background: #1a1a1a; /* Matte Gray Base */
 }
 
-/* LEFT SIDE: Deep Dark Green Brand Panel */
+/* LEFT SIDE: Darker Slate Brand Panel */
 .brand-panel {
   width: 55%;
-  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
   color: #ffffff;
   display: flex; flex-direction: column; justify-content: center;
   padding: 0 10% 0 8%;
-  /* This creates the diagonal cut */
+  /* Diagonal cut */
   clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
   z-index: 2;
+  border-right: 1px solid rgba(255,255,255,0.05); /* subtle edge */
 }
 
 /* Brand Content */
 .brand-icon {
-  width: 48px; height: 48px; border-radius: 12px;
-  background: rgba(255,255,255,0.1);
+  width: 56px; height: 56px; border-radius: 16px;
+  background: rgba(74, 222, 128, 0.1);
   display: flex; align-items: center; justify-content: center;
-  font-size: 24px; margin-bottom: 30px;
-  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 28px; margin-bottom: 30px;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.1);
 }
-.brand-panel h1 { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; letter-spacing: -1px; }
-.brand-panel p { font-size: 16px; color: #a7f3d0; line-height: 1.6; margin-bottom: 40px; max-width: 90%; }
+.brand-panel h1 { font-size: 52px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
+.brand-panel p { font-size: 16px; color: #94a3b8; line-height: 1.6; margin-bottom: 40px; max-width: 90%; }
 .brand-features { display: flex; flex-direction: column; gap: 16px; margin-bottom: 60px; }
-.feature { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #ecfdf5; }
-.feature span { color: #34d399; font-weight: bold; font-size: 18px; }
+.feature { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #cbd5e1; font-weight: 500;}
+.feature span { color: #4ade80; font-weight: bold; font-size: 18px; }
 
-/* RIGHT SIDE: Cream Green with Glass Form */
+/* RIGHT SIDE: Matte Gray Form Area */
 .form-panel {
   width: 45%;
   margin-left: -5%; /* Tucks under the diagonal */
   padding-left: 8%;
   display: flex; align-items: center; justify-content: center;
   position: relative;
-  background: radial-gradient(circle at 80% 20%, #d1fae5 0%, #ecfdf5 70%);
+  background: #1a1a1a;
   z-index: 1;
 }
 
 /* Glassmorphism Form Card */
 .login-box {
-  background: rgba(255, 255, 255, 0.6) !important;
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 25px 50px -12px rgba(6, 78, 59, 0.15) !important;
+  background: rgba(30, 41, 59, 0.4) !important;
+  backdrop-filter: blur(32px) saturate(150%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
   padding: 50px !important;
   border-radius: 24px !important;
   width: 100% !important;
@@ -2118,33 +2120,34 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
 }
 
 /* Form Typography */
-.login-box h2 { color: #064e3b !important; font-weight: 800; font-size: 28px; margin-bottom: 8px; }
-.login-box p { color: #047857 !important; margin-bottom: 32px; font-size: 15px; font-weight: 500; }
+.login-box h2 { color: #ffffff !important; font-weight: 800; font-size: 28px; margin-bottom: 8px; }
+.login-box p { color: #94a3b8 !important; margin-bottom: 32px; font-size: 15px; font-weight: 500; }
 
 /* Modern Inputs with Icons */
-.input-group { position: relative; margin-bottom: 16px; }
+.input-group { position: relative; margin-bottom: 20px; }
 .input-group .input-icon {
   position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-  font-size: 18px; color: #10b981; pointer-events: none;
+  font-size: 18px; color: #64748b; pointer-events: none;
 }
-.login-box .label { color: #064e3b !important; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.login-box .label { color: #cbd5e1 !important; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 .login-box .input { 
-  background: rgba(255, 255, 255, 0.8) !important; 
-  border: 1px solid rgba(16, 185, 129, 0.2) !important; 
-  color: #064e3b !important; 
+  background: rgba(15, 23, 42, 0.6) !important; 
+  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
+  color: #ffffff !important; 
   padding: 16px 16px 16px 46px !important; 
   border-radius: 12px !important; 
   font-size: 15px;
 }
+.login-box .input::placeholder { color: #64748b !important; }
 .login-box .input:focus { 
-  border-color: #10b981 !important; 
-  background: #ffffff !important; 
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important; 
+  border-color: #4ade80 !important; 
+  background: rgba(15, 23, 42, 0.9) !important; 
+  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.1) !important; 
 }
 
 /* Premium Button */
 .login-box .btn-primary { 
-  background: #10b981 !important; 
+  background: #16a34a !important; 
   color: #ffffff !important; 
   font-weight: 700 !important; 
   font-size: 16px !important; 
@@ -2153,11 +2156,12 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
   border-radius: 12px !important; 
   transition: 0.2s;
   display: flex; justify-content: center; align-items: center; gap: 8px;
+  box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.3) !important;
 }
 .login-box .btn-primary:hover {
-  background: #059669 !important;
+  background: #15803d !important;
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.6) !important;
+  box-shadow: 0 10px 20px -10px rgba(22, 163, 74, 0.6) !important;
 }
 
 /* Mobile Responsive */
@@ -2169,6 +2173,8 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
     padding: 60px 20px !important; 
     text-align: center; 
     align-items: center;
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
   .brand-panel h1 { font-size: 36px; }
   .brand-features { display: none; /* Hide features on mobile to save space */ }
@@ -2184,7 +2190,7 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
     document.getElementById('app').innerHTML = `
       <div class="login-page">
         
-        <!-- Left Side: Dark Green Branding -->
+        <!-- Left Side: Slate Branding -->
         <div class="brand-panel">
           <div class="brand-icon">🌱</div>
           <h1>Krishi<br>Bandhu</h1>
@@ -2197,7 +2203,7 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
           </div>
         </div>
 
-        <!-- Right Side: Cream Green Form Area -->
+        <!-- Right Side: Matte Gray Form Area -->
         <div class="form-panel">
           <form id="login-form" class="login-box">
             <h2>Welcome back</h2>
@@ -2219,7 +2225,7 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !import
               </div>
             </div>
             
-            <div id="l-err" style="color:#dc2626;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;font-weight:600;"></div>
+            <div id="l-err" style="color:#f87171;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;font-weight:600;"></div>
             
             <button class="btn btn-primary btn-block" type="submit" id="l-btn">
               Sign In <span>→</span>
