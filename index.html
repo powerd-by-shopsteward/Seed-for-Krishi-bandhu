@@ -1027,6 +1027,758 @@ window.addEventListener('hashchange', route);
   }catch(e){ console.error(e); }
   await route();
 })();
+  /* ---------- SUPPLIERS ---------- */
+function renderSuppliers(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Suppliers</h1><p>Purchase bills and payments</p></div>
+      <div class="page-actions"><button id="add-sup" class="btn btn-primary">+ Add Supplier</button></div>
+    </div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Supplier</th><th>Phone</th><th class="text-right">Bills</th><th class="text-right">Due</th><th></th></tr></thead>
+      <tbody id="sup-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const body = $('#sup-body');
+    if(DB.suppliers.length===0){ body.innerHTML='<tr><td colspan="5" class="empty">No suppliers</td></tr>'; return; }
+    body.innerHTML = DB.suppliers.map(s=>{
+      const due = supplierDue(s.id);
+      const billCount = DB.supplier_bills.filter(b=>b.supplier_id===s.id).length;
+      return `<tr style="cursor:pointer" data-sup="${s.id}">
+        <td style="font-weight:500">${esc(s.name)}</td>
+        <td>${esc(s.phone||'-')}</td>
+        <td class="text-right">${billCount}</td>
+        <td class="text-right" style="color:${due>0?'var(--r)':'var(--mu)'};font-weight:${due>0?'600':'400'}">${rs(due)}</td>
+        <td class="text-right" style="white-space:nowrap">
+          <button class="btn btn-secondary btn-sm" data-edit="${s.id}">Edit</button>
+          <button class="btn btn-danger btn-sm" data-del="${s.id}">Del</button>
+        </td>
+      </tr>`;
+    }).join('');
+    
+    $$('[data-edit]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();openSupplierForm(DB.suppliers.find(x=>x.id===b.dataset.edit));});
+    
+    // Custom Delete Modal
+    $$('[data-del]',body).forEach(b=>b.onclick=e=>{
+      e.stopPropagation();
+      const s = DB.suppliers.find(x=>x.id===b.dataset.del);
+      openModal(`
+        <h2>Delete Supplier?</h2>
+        <p style="font-size:14px;color:var(--mu);margin-bottom:20px">Delete <b>${esc(s.name)}</b> and all their bills? This cannot be undone.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-danger" id="del-sup-btn">Delete</button>
+        </div>
+      `, root => {
+        root.querySelector('#del-sup-btn').onclick = async () => {
+          const btn = root.querySelector('#del-sup-btn'); btn.disabled = true; btn.textContent = 'Deleting...';
+          await sb.from('seeds_suppliers').delete().eq('id',s.id);
+          await syncDB(); toast('Deleted','success'); closeModal(); route();
+        };
+      });
+    });
+    $$('[data-sup]',body).forEach(tr=>tr.onclick=()=>location.hash='#/supplier/'+tr.dataset.sup);
+  }
+  $('#add-sup').onclick = ()=>openSupplierForm();
+  renderTable();
+}
+
+function openSupplierForm(existing){
+  const s = existing || {name:'', phone:'', opening_balance:0};
+  openModal(`
+    <h2>${existing?'Edit Supplier':'New Supplier'}</h2>
+    <form id="sup-form">
+      <div class="form-row"><label class="label">Name *</label><input class="input" name="name" required value="${esc(s.name)}" autofocus></div>
+      <div class="form-row"><label class="label">Phone</label><input class="input" name="phone" value="${esc(s.phone||'')}"></div>
+      <div class="form-row"><label class="label">Opening Balance (₹)</label><input class="input" type="number" step="any" name="opening_balance" value="${s.opening_balance||0}"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="sf-save">${existing?'Update':'Save'}</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#sup-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = {name:fd.get('name').trim(), phone:fd.get('phone').trim(), opening_balance:Number(fd.get('opening_balance'))||0};
+      const btn = root.querySelector('#sf-save'); btn.disabled=true; btn.textContent='Saving...';
+      let result;
+      if(existing) result = await sb.from('seeds_suppliers').update(data).eq('id',existing.id);
+      else result = await sb.from('seeds_suppliers').insert(data);
+      if(result.error){ toast(result.error.message,'error'); btn.disabled=false; btn.textContent=existing?'Update':'Save'; return; }
+      await syncDB(); toast(existing?'Updated':'Added','success'); closeModal(); route();
+    };
+  });
+}
+
+function renderSupplierProfile(content, id){
+  const s = DB.suppliers.find(x=>x.id===id);
+  if(!s){ content.innerHTML='<div class="empty">Supplier not found</div>'; return; }
+  const bills = DB.supplier_bills.filter(b=>b.supplier_id===id).sort((a,b)=>b.bill_date.localeCompare(a.bill_date));
+  const pays = DB.supplier_payments.filter(p=>p.supplier_id===id).sort((a,b)=>b.payment_date.localeCompare(a.payment_date));
+  const due = supplierDue(id);
+  const totalBills = bills.reduce((s,b)=>s+Number(b.total),0);
+  const totalPaid = bills.reduce((s,b)=>s+Number(b.paid),0) + pays.reduce((s,p)=>s+Number(p.amount),0) + Number(s.opening_balance||0);
+
+  content.innerHTML = `
+    <a href="#/suppliers" style="color:var(--mu);font-size:13px">← Back</a>
+    <div class="page-header" style="margin-top:12px">
+      <div><h1>${esc(s.name)}</h1><p>${esc(s.phone||'No phone')}</p></div>
+      <div class="page-actions">
+        <button id="btn-bill" class="btn btn-primary">+ Add Bill</button>
+        <button id="btn-pay" class="btn btn-secondary">+ Payment</button>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Total Bills</div><div class="stat-value">${rs(totalBills)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Paid</div><div class="stat-value green">${rs(totalPaid)}</div></div>
+      <div class="stat-card"><div class="stat-label">Due</div><div class="stat-value red">${rs(due)}</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Bills</h2>
+      ${bills.length===0?'<div class="empty">No bills</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Bill No</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Balance</th><th></th></tr></thead>
+          <tbody>${bills.map(b=>`<tr>
+            <td>${esc(b.bill_no||'-')}</td>
+            <td>${fmtDate(b.bill_date)}</td>
+            <td class="text-right">${rs(b.total)}</td>
+            <td class="text-right" style="color:var(--gd)">${rs(b.paid)}</td>
+            <td class="text-right" style="color:var(--r)">${rs(Number(b.total)-Number(b.paid))}</td>
+            <td class="text-right"><button class="btn btn-danger btn-sm" data-del-bill="${b.id}">×</button></td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Payments</h2>
+      ${pays.length===0?'<div class="empty">No payments</div>':`
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Mode</th><th>Notes</th><th class="text-right">Amount</th></tr></thead>
+          <tbody>${pays.map(p=>`<tr>
+            <td>${fmtDate(p.payment_date)}</td>
+            <td>${esc(p.mode||'-')}</td>
+            <td>${esc(p.notes||'-')}</td>
+            <td class="text-right" style="color:var(--gd);font-weight:600">${rs(p.amount)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>`}
+    </div>`;
+
+  $('#btn-bill').onclick = ()=>openBillForm(s);
+  $('#btn-pay').onclick = ()=>openSupplierPayment(s);
+  $$('[data-del-bill]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('Delete this bill?')) return;
+    await sb.from('seeds_supplier_bills').delete().eq('id',b.dataset.delBill);
+    await syncDB(); toast('Deleted','success'); route();
+  });
+}
+
+function openBillForm(s){
+  openModal(`
+    <h2>Add Bill — ${esc(s.name)}</h2>
+    <form id="bill-form">
+      <div class="form-grid">
+        <div><label class="label">Bill No</label><input class="input" name="bill_no"></div>
+        <div><label class="label">Bill Date *</label><input class="input" type="date" name="bill_date" required value="${todayStr()}"></div>
+      </div>
+      <div class="form-grid">
+        <div><label class="label">Total (₹) *</label><input class="input" type="number" step="any" name="total" required></div>
+        <div><label class="label">Paid Now (₹)</label><input class="input" type="number" step="any" name="paid" value="0"></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" name="notes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="bf-save">Save Bill</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#bill-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#bf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_supplier_bills').insert({
+        supplier_id:s.id, bill_no:fd.get('bill_no'), bill_date:fd.get('bill_date'),
+        total:Number(fd.get('total'))||0, paid:Number(fd.get('paid'))||0, notes:fd.get('notes')
+      });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save Bill'; return; }
+      await syncDB(); toast('Bill added','success'); closeModal(); route();
+    };
+  });
+}
+
+function openSupplierPayment(s){
+  openModal(`
+    <h2>Pay Supplier — ${esc(s.name)}</h2>
+    <form id="sp-form">
+      <div class="form-row"><label class="label">Date</label><input class="input" type="date" name="date" required value="${todayStr()}"></div>
+      <div class="form-grid">
+        <div><label class="label">Amount (₹) *</label><input class="input" type="number" step="any" name="amount" required autofocus></div>
+        <div><label class="label">Mode</label><select class="input" name="mode"><option>cash</option><option>upi</option><option>bank</option><option>cheque</option></select></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" name="notes"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="spf-save">Save</button>
+      </div>
+    </form>`, root=>{
+    root.querySelector('#sp-form').onsubmit = async e=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const btn = root.querySelector('#spf-save'); btn.disabled=true; btn.textContent='Saving...';
+      const { error } = await sb.from('seeds_supplier_payments').insert({
+        supplier_id:s.id, payment_date:fd.get('date'),
+        amount:Number(fd.get('amount'))||0, mode:fd.get('mode'), notes:fd.get('notes')
+      });
+      if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
+      await syncDB(); toast('Payment recorded','success'); closeModal(); route();
+    };
+  });
+}
+
+/* ---------- REPORTS ---------- */
+function renderReports(content){
+  const today = todayStr();
+  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0,10);
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Reports</h1><p>Sales, profit and margin</p></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end">
+        <div><label class="label">From</label><input class="input" type="date" id="r-from" value="${firstOfMonth}" max="${today}"></div>
+        <div><label class="label">To</label><input class="input" type="date" id="r-to" value="${today}" max="${today}"></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-secondary btn-sm" data-preset="today">Today</button>
+          <button class="btn btn-secondary btn-sm" data-preset="week">This Week</button>
+          <button class="btn btn-secondary btn-sm" data-preset="month">This Month</button>
+          <button class="btn btn-secondary btn-sm" data-preset="year">This Year</button>
+        </div>
+      </div>
+    </div>
+    <div class="stats-grid" id="r-stats" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))"></div>
+    <div class="card" style="margin-bottom:16px">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Invoice-wise Profit &amp; Margin</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-right">Revenue</th><th class="text-right">Cost</th><th class="text-right">Profit</th><th class="text-right">Margin</th></tr></thead>
+        <tbody id="r-body"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">Detailed Sales (Product-wise)</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Product</th><th>Date</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Total</th><th class="text-right">Profit</th></tr></thead>
+        <tbody id="r-prod-body"></tbody>
+      </table></div>
+    </div>`;
+
+  function load(){
+    const from = $('#r-from').value, to = $('#r-to').value;
+    if(!from || !to){ toast('Pick both dates','error'); return; }
+    if(from > to){ toast('From cannot be after To','error'); return; }
+    
+    const invs = DB.invoices.filter(i=>i.invoice_date >= from && i.invoice_date <= to);
+    const invsIds = invs.map(i=>i.id);
+    const items = DB.invoice_items.filter(it=>invsIds.includes(it.invoice_id));
+
+    const bills = DB.supplier_bills.filter(b => b.bill_date >= from && b.bill_date <= to);
+    const totalPurchases = bills.reduce((s, b) => s + Number(b.total), 0);
+
+    let cost = 0;
+    items.forEach(it=>{
+      cost += Number(it.qty) * Number(it.cost_price);
+    });
+    
+    const totalRev = invs.reduce((s,i)=>s+Number(i.total),0);
+    const profit = totalRev - cost;
+    const margin = totalRev > 0 ? (profit/totalRev)*100 : 0;
+
+    $('#r-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Sales</div><div class="stat-value green">${rs(totalRev)}</div><div class="stat-sub">${invs.length} invoices</div></div>
+      <div class="stat-card"><div class="stat-label">Total Purchases</div><div class="stat-value blue">${rs(totalPurchases)}</div><div class="stat-sub">${bills.length} bills</div></div>
+      <div class="stat-card"><div class="stat-label">Cost of Goods Sold</div><div class="stat-value">${rs(cost)}</div></div>
+      <div class="stat-card"><div class="stat-label">Profit</div><div class="stat-value ${profit>=0?'green':'red'}">${rs(profit)}</div></div>
+      <div class="stat-card"><div class="stat-label">Margin</div><div class="stat-value ${margin>=0?'green':'red'}">${margin.toFixed(1)}%</div></div>`;
+
+    const rows = invs.map(inv=>{
+      const c = DB.customers.find(x=>x.id===inv.customer_id);
+      const its = items.filter(it=>it.invoice_id===inv.id);
+      const ic = its.reduce((s,it)=>s+Number(it.qty)*Number(it.cost_price),0);
+      const p = Number(inv.total) - ic;
+      const m = Number(inv.total) > 0 ? (p/Number(inv.total))*100 : 0;
+      return { inv, cust:c, cost:ic, profit:p, margin:m };
+    }).sort((a,b)=>b.inv.invoice_date.localeCompare(a.inv.invoice_date));
+    
+    $('#r-body').innerHTML = rows.length===0?'<tr><td colspan="7" class="empty">No invoices</td></tr>'
+      :rows.map(r=>`<tr>
+        <td style="font-weight:500"><a href="#/invoice/${r.inv.id}">${esc(r.inv.invoice_no)}</a></td>
+        <td>${esc(r.cust?.name||'Walk-in')}</td>
+        <td>${fmtDate(r.inv.invoice_date)}</td>
+        <td class="text-right">${rs(r.inv.total)}</td>
+        <td class="text-right" style="color:var(--mu)">${rs(r.cost)}</td>
+        <td class="text-right" style="font-weight:600;color:${r.profit>=0?'var(--gd)':'var(--r)'}">${rs(r.profit)}</td>
+        <td class="text-right" style="color:${r.margin>=0?'var(--gd)':'var(--r)'}">${r.margin.toFixed(1)}%</td>
+      </tr>`).join('');
+
+    const detailedSales = [];
+    invs.forEach(inv => {
+       const invItems = items.filter(it => it.invoice_id === inv.id);
+       invItems.forEach(it => {
+          const itCost = Number(it.qty) * Number(it.cost_price);
+          const itProfit = Number(it.total) - itCost;
+          detailedSales.push({
+             product: it.product_name,
+             date: inv.invoice_date,
+             qty: fmtNum(it.qty) + ' ' + it.unit,
+             rate: rs(it.sell_price),
+             total: Number(it.total),
+             profit: itProfit
+          });
+       });
+    });
+    
+    detailedSales.sort((a,b) => a.product.localeCompare(b.product) || a.date.localeCompare(b.date));
+
+    $('#r-prod-body').innerHTML = detailedSales.length===0?'<tr><td colspan="6" class="empty">No data</td></tr>'
+      :detailedSales.map(d=>`<tr>
+        <td style="font-weight:500">${esc(d.product)}</td>
+        <td>${fmtDate(d.date)}</td>
+        <td class="text-right">${d.qty}</td>
+        <td class="text-right">${d.rate}</td>
+        <td class="text-right">${rs(d.total)}</td>
+        <td class="text-right" style="color:${d.profit>=0?'var(--gd)':'var(--r)'}">${rs(d.profit)}</td>
+      </tr>`).join('');
+  }
+
+  $$('[data-preset]').forEach(b=>b.onclick=()=>{
+    const p = b.dataset.preset;
+    const to = todayStr();
+    let from = todayStr();
+    if(p==='week'){ const d=new Date(); const day=d.getDay()||7; const mon=new Date(d); mon.setDate(d.getDate()-day+1); from = mon.toISOString().slice(0,10); }
+    else if(p==='month') from = firstOfMonth;
+    else if(p==='year') from = new Date().getFullYear()+'-01-01';
+    $('#r-from').value = from; $('#r-to').value = to;
+    load();
+  });
+  $('#r-from').onchange = load;
+  $('#r-to').onchange = load;
+  load();
+}
+
+/* ---------- PROFILE ---------- */
+function renderProfile(content){
+  content.innerHTML = `
+    <div class="page-header"><div><h1>Shop Profile</h1></div></div>
+    <div class="card" style="max-width:600px">
+      <form id="profile-form">
+        <div class="form-row"><label class="label">Shop Name</label><input class="input" name="shop_name" value="${esc(SETTINGS.shop_name)}"></div>
+        <div class="form-row"><label class="label">Owner Name</label><input class="input" name="owner_name" value="${esc(SETTINGS.owner_name)}"></div>
+        <div class="form-row"><label class="label">Address</label><textarea class="input" name="address" rows="2">${esc(SETTINGS.address)}</textarea></div>
+        <div class="form-grid">
+          <div><label class="label">Phone</label><input class="input" name="phone" value="${esc(SETTINGS.phone)}"></div>
+          <div><label class="label">License</label><input class="input" name="license" value="${esc(SETTINGS.license)}"></div>
+        </div>
+        <div class="form-row"><label class="label">UPI ID</label><input class="input" name="upi" value="${esc(SETTINGS.upi)}"></div>
+        <div class="form-row">
+          <label class="label">Logo (URL or upload)</label>
+          <input class="input" name="logo" value="${esc(SETTINGS.logo)}" placeholder="https://..." style="margin-bottom:6px">
+          <input type="file" id="logo-file" accept="image/*" style="font-size:12px">
+        </div>
+        <button class="btn btn-primary" id="pf-save">Save</button>
+      </form>
+    </div>`;
+
+  $('#logo-file').onchange = e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev=>{ $('input[name="logo"]').value = ev.target.result; };
+    r.readAsDataURL(f);
+  };
+  $('#profile-form').onsubmit = async e=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    SETTINGS.shop_name = fd.get('shop_name');
+    SETTINGS.owner_name = fd.get('owner_name');
+    SETTINGS.address = fd.get('address');
+    SETTINGS.phone = fd.get('phone');
+    SETTINGS.license = fd.get('license');
+    SETTINGS.upi = fd.get('upi');
+    SETTINGS.logo = fd.get('logo');
+    const ok = await saveSettings();
+    if(ok){ toast('Saved','success'); route(); }
+  };
+}
+
+/* ---------- ROUTER ---------- */
+async function route(){
+  const hash = location.hash || '#/';
+  if(!SESSION){ renderLogin(); return; }
+  renderLayout();
+  const content = $('#content');
+  if(!content) return;
+  try{
+    if(hash==='#/' || hash==='') renderDashboard(content);
+    else if(hash==='#/customers') renderCustomers(content);
+    else if(hash.startsWith('#/customer/')) renderCustomerProfile(content, hash.slice(11));
+    else if(hash==='#/invoices') renderInvoices(content);
+    else if(hash==='#/invoice/new') renderNewInvoice(content);
+    else if(hash.startsWith('#/invoice/')) renderInvoiceView(content, hash.slice(10));
+    else if(hash==='#/products') renderProducts(content);
+    else if(hash==='#/suppliers') renderSuppliers(content);
+    else if(hash.startsWith('#/supplier/')) renderSupplierProfile(content, hash.slice(11));
+    else if(hash==='#/reports') renderReports(content);
+    else if(hash==='#/profile') renderProfile(content);
+    else renderDashboard(content);
+  }catch(e){
+    console.error(e);
+    content.innerHTML = '<div class="card" style="color:var(--r)">Error: '+esc(e.message)+'</div>';
+  }
+}
+window.addEventListener('hashchange', route);
+  /* ---------- INVOICES ---------- */
+function renderInvoices(content){
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Invoices</h1><p>All sales invoices</p></div>
+      <div class="page-actions"><a href="#/invoice/new" class="btn btn-primary">+ New Invoice</a></div>
+    </div>
+    <div class="search-bar"><input class="input" id="inv-search" placeholder="Search invoice or customer..."></div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th class="text-right">Total</th><th class="text-right">Paid</th><th class="text-right">Due</th><th></th></tr></thead>
+      <tbody id="inv-body"></tbody>
+    </table></div></div>`;
+
+  function renderTable(){
+    const q = ($('#inv-search').value||'').toLowerCase();
+    const arr = DB.invoices.filter(i=>{
+      const c = DB.customers.find(x=>x.id===i.customer_id);
+      const hay = (i.invoice_no+' '+(c?.name||'')+' '+(c?.phone||'')).toLowerCase();
+      return !q || hay.includes(q);
+    });
+    const body = $('#inv-body');
+    if(arr.length===0){ body.innerHTML='<tr><td colspan="7" class="empty">No invoices</td></tr>'; return; }
+    body.innerHTML = arr.map(i=>{
+      const c = DB.customers.find(x=>x.id===i.customer_id);
+      return `<tr>
+        <td style="font-weight:500"><a href="#/invoice/${i.id}">${esc(i.invoice_no)}</a></td>
+        <td>${esc(c?.name||'Walk-in')}</td>
+        <td>${fmtDate(i.invoice_date)}</td>
+        <td class="text-right">${rs(i.total)}</td>
+        <td class="text-right" style="color:var(--gd)">${rs(i.paid)}</td>
+        <td class="text-right" style="color:${Number(i.due)>0?'var(--r)':'var(--mu)'};font-weight:${Number(i.due)>0?'600':'400'}">${rs(i.due)}</td>
+        <td class="text-right"><button class="btn btn-danger btn-sm" data-del="${i.id}">Del</button></td>
+      </tr>`;
+    }).join('');
+    
+    // Delete Invoice with Custom Modal & Stock Restore
+    $$('[data-del]',body).forEach(b=>b.onclick=()=>{
+      const inv = DB.invoices.find(x=>x.id===b.dataset.del);
+      openModal(`
+        <h2>Delete Invoice?</h2>
+        <p style="font-size:14px;color:var(--mu);margin-bottom:20px">Are you sure you want to delete invoice <b>${esc(inv.invoice_no)}</b>? The stock will be restored to inventory.</p>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-danger" id="del-inv-btn">Delete Invoice</button>
+        </div>
+      `, root => {
+        root.querySelector('#del-inv-btn').onclick = async () => {
+          const btn = root.querySelector('#del-inv-btn'); btn.disabled=true; btn.textContent='Deleting...';
+          
+          const items = DB.invoice_items.filter(it=>it.invoice_id===inv.id);
+          // Restore stock
+          for(const it of items){
+            if(!it.product_id) continue;
+            const p = DB.products.find(x=>x.id===it.product_id);
+            if(p){
+              await sb.from('seeds_products').update({stock:Number(p.stock)+Number(it.base_qty)}).eq('id',p.id);
+            }
+          }
+          await sb.from('seeds_invoices').delete().eq('id',inv.id);
+          await syncDB(); toast('Deleted and stock restored','success'); closeModal(); route();
+        };
+      });
+    });
+  }
+  $('#inv-search').oninput = renderTable;
+  renderTable();
+}
+
+/* ---------- NEW INVOICE ---------- */
+function renderNewInvoice(content){
+  let lines = []; // {product_id, product_name, unit, qty, base_qty, pack_size, sell_price, cost_price, total}
+  let selectedCustomerId = null;
+
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>New Invoice</h1></div>
+      <div class="page-actions"><a href="#/invoices" class="btn btn-secondary">Cancel</a></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-grid">
+        <div><label class="label">Invoice Date *</label><input class="input" type="date" id="inv-date" value="${todayStr()}" max="${todayStr()}"></div>
+        <div><label class="label">Customer</label>
+          <div style="display:flex;gap:6px">
+            <select class="input" id="inv-customer"><option value="">— Walk-in —</option>
+              ${DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)}${c.phone?' · '+esc(c.phone):''}</option>`).join('')}
+            </select>
+            <button type="button" class="btn btn-secondary" id="btn-new-cust" style="padding:8px 12px">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <label class="label">Add Item</label>
+      <div style="display:flex;gap:6px;margin-bottom:12px">
+        <select class="input" id="add-prod-select">
+          <option value="">— Select product —</option>
+          ${DB.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+        </select>
+        <button type="button" class="btn btn-primary" id="btn-add-line">Add</button>
+      </div>
+      <div id="lines-box"></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-grid">
+        <div><label class="label">Discount (₹)</label><input class="input" type="number" step="any" id="inv-disc" value="0"></div>
+        <div><label class="label">Paid Now (₹)</label><input class="input" type="number" step="any" id="inv-paid" value="0"></div>
+      </div>
+      <div class="form-row"><label class="label">Notes</label><input class="input" id="inv-notes"></div>
+      <div id="summary" style="background:var(--bg);padding:14px;border-radius:10px;font-size:14px"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" id="btn-save" style="padding:12px 24px">Save Invoice</button>
+    </div>`;
+
+  function renderLines(){
+    const box = $('#lines-box');
+    if(lines.length===0){ box.innerHTML='<div class="empty" style="padding:20px">No items added yet</div>'; updateSummary(); return; }
+    box.innerHTML = `<div class="table-wrap"><table class="line-table">
+      <thead><tr><th>Item</th><th>Unit</th><th>Qty</th><th>Price</th><th class="text-right">Total</th><th></th></tr></thead>
+      <tbody>${lines.map((l,i)=>`
+        <tr>
+          <td>${esc(l.product_name)}</td>
+          <td><select class="input" data-i="${i}" data-f="unit">
+            <option value="base" ${l.unit==='base'?'selected':''}>${esc(l.base_unit)}</option>
+            <option value="pack" ${l.unit==='pack'?'selected':''}>${esc(l.pack_unit)}</option>
+          </select></td>
+          <td><input class="input" type="number" step="any" data-i="${i}" data-f="qty" value="${l.qty}" style="width:90px"></td>
+          <td><input class="input" type="number" step="any" data-i="${i}" data-f="sell_price" value="${l.sell_price}" style="width:110px"></td>
+          <td class="text-right" style="font-weight:600">${rs(l.total)}</td>
+          <td class="text-right"><button class="btn btn-danger btn-sm" data-del="${i}">×</button></td>
+        </tr>`).join('')}</tbody>
+    </table></div>`;
+    $$('input[data-i]',box).forEach(inp=>inp.oninput=e=>{
+      const i=+e.target.dataset.i, f=e.target.dataset.f;
+      lines[i][f] = Number(e.target.value)||0;
+      recalcLine(i);
+      renderLines();
+    });
+    $$('select[data-i]',box).forEach(sel=>sel.onchange=e=>{
+      const i=+e.target.dataset.i;
+      lines[i].unit = e.target.value;
+      const pr = resolvePrice(lines[i].product_id, $('#inv-date').value);
+      if(pr){
+        lines[i].sell_price = lines[i].unit==='pack' ? Number(pr.sell_price_pack) : Number(pr.sell_price_base);
+        lines[i].cost_price = lines[i].unit==='pack' ? Number(pr.cost_price_base)*Number(lines[i].pack_size) : Number(pr.cost_price_base);
+      }
+      recalcLine(i);
+      renderLines();
+    });
+    $$('[data-del]',box).forEach(b=>b.onclick=()=>{ lines.splice(+b.dataset.del,1); renderLines(); });
+    updateSummary();
+  }
+  function recalcLine(i){
+    const l = lines[i];
+    l.base_qty = l.unit==='pack' ? Number(l.qty)*Number(l.pack_size) : Number(l.qty);
+    l.total = Number(l.qty)*Number(l.sell_price);
+  }
+  function updateSummary(){
+    const subtotal = lines.reduce((s,l)=>s+l.total,0);
+    const disc = Number($('#inv-disc').value)||0;
+    const total = Math.max(0, subtotal-disc);
+    const paid = Number($('#inv-paid').value)||0;
+    const due = Math.max(0, total-paid);
+    $('#summary').innerHTML = `<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>${rs(subtotal)}</span></div>
+      ${disc>0?`<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Discount</span><span>−${rs(disc)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;border-top:1px solid var(--bd);padding-top:6px;margin-top:6px"><span>Total</span><span>${rs(total)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px"><span>Paid</span><span>${rs(paid)}</span></div>
+      <div style="display:flex;justify-content:space-between;color:${due>0?'var(--r)':'var(--mu)'};font-weight:600"><span>Due</span><span>${rs(due)}</span></div>`;
+  }
+  $('#inv-disc').oninput = updateSummary;
+  $('#inv-paid').oninput = updateSummary;
+
+  $('#btn-add-line').onclick = ()=>{
+    const pid = $('#add-prod-select').value;
+    if(!pid){ toast('Select a product','error'); return; }
+    const p = DB.products.find(x=>x.id===pid);
+    if(!p) return;
+    const invDate = $('#inv-date').value;
+    const pr = resolvePrice(p.id, invDate);
+    if(!pr){ toast('No price set for this product. Add a price first.','error'); return; }
+    const existing = lines.findIndex(l=>l.product_id===p.id && l.unit==='base');
+    if(existing>=0){
+      lines[existing].qty = Number(lines[existing].qty) + 1;
+      recalcLine(existing);
+      renderLines();
+      return;
+    }
+    lines.push({
+      product_id:p.id,
+      product_name:p.name,
+      base_unit:p.base_unit,
+      pack_unit:p.pack_unit,
+      pack_size:Number(p.pack_size),
+      unit:'base',
+      qty:1,
+      base_qty:1,
+      sell_price:Number(pr.sell_price_base),
+      cost_price:Number(pr.cost_price_base),
+      total:Number(pr.sell_price_base)
+    });
+    $('#add-prod-select').value = '';
+    renderLines();
+  };
+
+  $('#btn-new-cust').onclick = ()=>{
+    openModal(`
+      <h2>Quick Add Customer</h2>
+      <form id="quick-cust">
+        <div class="form-row"><label class="label">Name *</label><input class="input" name="name" required autofocus></div>
+        <div class="form-row"><label class="label">Phone</label><input class="input" name="phone"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="qcs">Save & Select</button>
+        </div>
+      </form>`, root=>{
+      root.querySelector('#quick-cust').onsubmit = async e=>{
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const btn = root.querySelector('#qcs'); btn.disabled=true; btn.textContent='Saving...';
+        const { data, error } = await sb.from('seeds_customers').insert({name:fd.get('name').trim(), phone:fd.get('phone').trim()}).select().single();
+        if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save & Select'; return; }
+        await syncDB();
+        selectedCustomerId = data.id;
+        const sel = $('#inv-customer');
+        const opt = document.createElement('option');
+        opt.value = data.id; opt.textContent = data.name + (data.phone?' · '+data.phone:'');
+        sel.appendChild(opt); sel.value = data.id;
+        toast('Customer added','success'); closeModal();
+      };
+    });
+  };
+
+  $('#btn-save').onclick = async ()=>{
+    if(lines.length===0){ toast('Add at least one item','error'); return; }
+    const invDate = $('#inv-date').value;
+    if(!invDate){ toast('Pick invoice date','error'); return; }
+    if(invDate > todayStr()){ toast('Future dates not allowed','error'); return; }
+    for(const l of lines){
+      const p = DB.products.find(x=>x.id===l.product_id);
+      if(p && Number(p.stock) < Number(l.base_qty)){
+        toast('Not enough stock: '+p.name,'error'); return;
+      }
+    }
+    const btn = $('#btn-save'); btn.disabled=true; btn.textContent='Saving...';
+
+    const subtotal = lines.reduce((s,l)=>s+l.total,0);
+    const disc = Number($('#inv-disc').value)||0;
+    const total = Math.max(0, subtotal-disc);
+    const paid = Number($('#inv-paid').value)||0;
+    const due = Math.max(0, total-paid);
+    const custId = $('#inv-customer').value || null;
+    const notes = $('#inv-notes').value;
+
+    let maxN = 0;
+    DB.invoices.forEach(inv=>{ const m = String(inv.invoice_no).match(/(\d+)/); if(m) maxN = Math.max(maxN, parseInt(m[1])); });
+    const invoice_no = 'INV-' + String(maxN+1).padStart(4,'0');
+
+    const { data:invData, error:invErr } = await sb.from('seeds_invoices').insert({
+      invoice_no, customer_id:custId, invoice_date:invDate,
+      subtotal, discount:disc, total, paid, due, notes
+    }).select().single();
+    if(invErr){ toast(invErr.message,'error'); btn.disabled=false; btn.textContent='Save Invoice'; return; }
+
+    const itemsData = lines.map(l=>({
+      invoice_id:invData.id, product_id:l.product_id, product_name:l.product_name,
+      unit:l.unit==='pack'?l.pack_unit:l.base_unit,
+      qty:l.qty, pack_size:l.pack_size, base_qty:l.base_qty,
+      sell_price:l.sell_price, cost_price:l.cost_price, total:l.total
+    }));
+    const { error:itemErr } = await sb.from('seeds_invoice_items').insert(itemsData);
+    if(itemErr){ toast('Items failed: '+itemErr.message,'error'); await sb.from('seeds_invoices').delete().eq('id',invData.id); btn.disabled=false; btn.textContent='Save Invoice'; return; }
+
+    for(const l of lines){
+      const p = DB.products.find(x=>x.id===l.product_id);
+      if(p) await sb.from('seeds_products').update({stock:Number(p.stock)-Number(l.base_qty)}).eq('id',p.id);
+    }
+
+    await syncDB();
+    toast('Invoice saved','success');
+    location.hash = '#/invoice/'+invData.id;
+  };
+
+  renderLines();
+}
+
+/* ---------- INVOICE VIEW ---------- */
+function renderInvoiceView(content, id){
+  const inv = DB.invoices.find(x=>x.id===id);
+  if(!inv){ content.innerHTML='<div class="empty">Invoice not found</div>'; return; }
+  const items = DB.invoice_items.filter(it=>it.invoice_id===id);
+  const cust = DB.customers.find(c=>c.id===inv.customer_id);
+
+  content.innerHTML = `
+    <a href="#/invoices" style="color:var(--mu);font-size:13px">← Back</a>
+    <div class="page-header" style="margin-top:12px">
+      <div><h1>Invoice ${esc(inv.invoice_no)}</h1><p>${fmtDate(inv.invoice_date)}</p></div>
+      <div class="page-actions">
+        <button class="btn btn-secondary" id="btn-print">Print</button>
+        <button class="btn btn-primary" id="btn-pdf">Download PDF</button>
+        <button class="btn btn-primary" id="btn-share" style="background:#25D366">WhatsApp Share</button>
+      </div>
+    </div>
+    <div class="card" id="print-area" style="max-width:760px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--g);padding-bottom:16px;margin-bottom:16px">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--gd)">${esc(SETTINGS.shop_name||'Seed Shop')}</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:4px">${esc(SETTINGS.owner_name||'')}</div>
+          <div style="font-size:12px;color:var(--mu)">${esc(SETTINGS.address||'')}</div>
+          ${SETTINGS.phone?`<div style="font-size:12px;color:var(--mu)">Ph: ${esc(SETTINGS.phone)}</div>`:''}
+          ${SETTINGS.license?`<div style="font-size:12px;color:var(--mu)">License: ${esc(SETTINGS.license)}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:700">${esc(inv.invoice_no)}</div>
+          <div style="font-size:12px;color:var(--mu)">${fmtDate(inv.invoice_date)}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:11px;color:var(--mu);text-transform:uppercase;font-weight:600">Bill to</div>
+        <div style="font-weight:600;margin-top:2px">${esc(cust?.name||'Walk-in Customer')}</div>
+        ${cust?.phone?`<div style="font-size:12px;color:var(--mu)">${esc(cust.phone)}</div>`:''}
+      </div>
+      <table style="margin-bottom:16px">
+        <thead><tr><th>Item</th><th>Unit</th><th class="text-right">Qty</th><th class="text-right">Rate</th><th class="text-right">Amount</th></tr></thead>
+        <tbody>${items.map(it=>`<tr>
+          <td>${esc(it.product_name)}</td>
+          <td>${esc(it.unit)}</td>
+          <td class="text-right">${fmtNum(it.qty)}</td>
+          <td class="text-right">${rs(it.sell_price)}</td>
+          <td class="text-right">${rs(it.total)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end">
+        <div style="min-width:220px">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Subtotal</span><span>${rs(inv.subtotal)}</span></div>
+          ${Number(inv.discount)>0?`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Discount</span><span>−${rs(inv.discount)}</span></div>`:''}
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:15px;font-weight:700;border-top:1px solid var(--bd);margin-top:4px"><span>Total</span><span>${rs(inv.total)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px"><span>Paid</span><span>${rs(inv.paid)}</span></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;color:${Number(inv.due)>0?'var(--r)':'var(--mu)'};font-weight:600"><span>Due</span><span>${rs(inv.due)}</span></div>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--mu);margin-top:24px;padding-top:12px;border-top:1px solid var(--bd)">Thank you!</div>
+    </div>`;
+
+  $('#btn-print').onclick = ()=>window.print();
+  $('#btn-pdf').onclick = ()=>downloadInvoicePDF(inv, items, cust);
+  $('#btn-share').onclick = ()=>shareInvoicePDF(inv, items, cust);
+}
 </script>
 </body>
 </html>
