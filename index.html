@@ -1780,90 +1780,113 @@ function renderInvoiceView(content, id){
   $('#btn-share').onclick = ()=>shareInvoicePDF(inv, items, cust);
 }
 </script>
-  <!-- ========================================== -->
-<!-- FLOATING PILL LAYOUT OVERRIDE -->
 <!-- ========================================== -->
+<!-- FINAL: MATTE AURORA + STURDY GLASS + STRETCH -->
+<!-- ========================================== -->
+
 <style>
+/* 1. Matte Aurora Background */
+body {
+  background-color: #0b1120 !important; 
+  background-image: 
+    radial-gradient(circle at 15% 30%, rgba(76, 29, 149, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 85% 70%, rgba(6, 78, 59, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, rgba(15, 23, 42, 0.8) 0%, #060911 100%) !important;
+  background-attachment: fixed !important;
+  color: #f8fafc !important;
+  font-size: 15px;
+}
+
+/* 2. Stretch Everything to Fit Screen */
+.main {
+  max-width: 100% !important; 
+  padding: 40px 60px 140px 140px !important; /* Stretches to edges */
+  margin: 0 auto;
+}
+
+/* Make Cards Bigger */
+.card, .stat-card {
+  padding: 28px !important;
+  margin-bottom: 24px !important;
+}
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important; /* Wider cards */
+  gap: 24px !important;
+}
+.stat-value { font-size: 28px !important; margin-top: 8px !important; }
+.stat-label { font-size: 13px !important; }
+.page-header h1 { font-size: 28px !important; }
+
+/* Make Tables Breathe */
+th { padding: 16px 20px !important; font-size: 14px !important; background: transparent !important; color: #94a3b8 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }
+td { padding: 18px 20px !important; font-size: 15px !important; color: #cbd5e1 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; }
+tr:hover td { background: rgba(255, 255, 255, 0.04) !important; }
+
+/* 3. Sturdy, Transparent Dark Glass */
+.card, .stat-card, .vertical-pill, .horizontal-pill, .modal, .login-box, .ss-dropdown, .calc {
+  background: rgba(30, 41, 59, 0.4) !important; /* Deep transparent slate */
+  backdrop-filter: blur(32px) saturate(150%) !important; /* Sturdy blur */
+  -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important; /* Crisp light edge */
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6) !important;
+  color: #f8fafc !important;
+}
+
+/* 4. Typography & Details */
+.card h1, .card h2, .card h3, .modal h2, .page-header h1 { color: #ffffff !important; }
+.page-header p { color: #94a3b8 !important; font-size: 15px !important; }
+.card a { color: #4ade80 !important; }
+.text-muted, .stat-sub { color: #94a3b8 !important; }
+
+/* 5. Inputs & Buttons */
+.input, select.input, textarea.input {
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  padding: 12px 16px !important;
+  font-size: 15px !important;
+}
+.input:focus, select.input:focus, textarea.input:focus {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: #4ade80 !important;
+}
+.btn { padding: 12px 20px !important; font-size: 14px !important; }
+.btn-secondary { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; }
+.btn-secondary:hover { background: rgba(255, 255, 255, 0.15) !important; }
+.btn-primary { background: #16a34a !important; box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.3) !important; }
+
+/* 6. Floating Pills */
+.vertical-pill { left: 30px !important; padding: 16px 0 !important; background: rgba(30, 41, 59, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.horizontal-pill { bottom: 30px !important; height: 72px !important; background: rgba(30, 41, 59, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.pill-link { width: 56px !important; height: 56px !important; font-size: 24px !important; color: #94a3b8 !important; }
+.pill-link:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff !important; }
+.pill-link.active { background: rgba(74, 222, 128, 0.15) !important; color: #4ade80 !important; }
+
 /* Hide old layout */
 .sidebar, .mobile-nav, .mobile-header { display: none !important; }
-
-/* Adjust main content to make room for pills */
 .layout { display: block !important; }
-.main { padding: 40px 20px 120px 120px !important; max-width: 1200px; width: 100%; margin: 0 auto; }
-
-/* Left Vertical Pill */
-.vertical-pill {
-  position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
-  background: var(--sf); border-radius: 40px; padding: 12px 0;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  display: flex; flex-direction: column; gap: 8px; z-index: 100;
-  border: 1px solid var(--bd);
-}
-
-/* Bottom Horizontal Pill */
-.horizontal-pill {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: var(--sf); border-radius: 40px; padding: 0 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  display: flex; align-items: center; gap: 8px; height: 64px; z-index: 100;
-  border: 1px solid var(--bd);
-}
-
-/* Pill Links & Buttons */
-.pill-link {
-  position: relative; width: 48px; height: 48px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--mu); font-size: 20px; text-decoration: none; transition: 0.2s;
-  background: transparent; border: none; cursor: pointer;
-}
-.pill-link:hover { background: var(--bg); color: var(--tx); }
-.pill-link.active { background: var(--gl); color: var(--gd); }
-
-/* Tooltips */
-.pill-tooltip {
-  position: absolute; background: #1e293b; color: #fff;
-  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
-  white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: 0.2s; z-index: 101;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-
-/* Tooltip Positions */
-.vertical-pill .pill-link .pill-tooltip { left: 60px; top: 50%; transform: translateY(-50%) translateX(-10px); }
-.vertical-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
-
-.horizontal-pill .pill-link .pill-tooltip { bottom: 60px; left: 50%; transform: translateX(-50%) translateY(10px); }
-.horizontal-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
 /* Mobile Adjustments */
 @media(max-width: 768px) {
-  .vertical-pill { left: 10px; padding: 8px 0; }
-  .pill-link { width: 40px; height: 40px; font-size: 18px; }
-  .vertical-pill .pill-link .pill-tooltip { left: 50px; }
-  .main { padding: 20px 10px 100px 70px !important; }
-  .horizontal-pill { bottom: 10px; padding: 0 8px; height: 56px; gap: 4px; }
-  .horizontal-pill .pill-link { width: 40px; height: 40px; font-size: 18px; }
+  .main { padding: 20px 15px 110px 15px !important; }
+  .vertical-pill { left: 10px !important; padding: 8px 0 !important; }
+  .horizontal-pill { bottom: 10px !important; height: 60px !important; }
+  .pill-link { width: 44px !important; height: 44px !important; font-size: 20px !important; }
 }
 </style>
 
 <script>
 (function() {
-  // Override the original renderLayout function
+  // Override layout to use Floating Pills
   window.renderLayout = function() {
     const hash = location.hash || '#/';
     
-    // Primary Navigation (Left Vertical Pill)
     const primaryNAV = [
-      ['#/', '📊', 'Dashboard'],
-      ['#/customers', '👥', 'Customers'],
-      ['#/invoices', '📄', 'Invoices'],
-      ['#/reports', '📈', 'Reports']
+      ['#/', '📊', 'Dashboard'], ['#/customers', '👥', 'Customers'],
+      ['#/invoices', '📄', 'Invoices'], ['#/reports', '📈', 'Reports']
     ];
-    
-    // Secondary Navigation (Bottom Horizontal Pill)
     const secondaryNAV = [
-      ['#/products', '📦', 'Products'],
-      ['#/suppliers', '🚚', 'Suppliers'],
-      ['#/profile', '⚙️', 'Shop Profile']
+      ['#/products', '📦', 'Products'], ['#/suppliers', '🚚', 'Suppliers'], ['#/profile', '⚙️', 'Shop Profile']
     ];
 
     const vnavHTML = primaryNAV.map(([h, i, l]) => {
@@ -1878,21 +1901,13 @@ function renderInvoiceView(content, id){
 
     document.getElementById('app').innerHTML = `
       <div class="layout">
-        <!-- Left Vertical Pill -->
-        <nav class="vertical-pill">
-          ${vnavHTML}
-        </nav>
-
-        <!-- Main Content Area -->
+        <nav class="vertical-pill">${vnavHTML}</nav>
         <main id="content" class="main"></main>
-        
-        <!-- Bottom Horizontal Pill -->
         <nav class="horizontal-pill">
           ${hnavHTML}
-          <div style="width:1px; height:24px; background:var(--bd); margin:0 4px;"></div>
-          <button id="btn-logout" class="pill-link" style="color:var(--r)">
-            <span>↪</span>
-            <span class="pill-tooltip">Sign out</span>
+          <div style="width:1px; height:32px; background:rgba(255,255,255,0.15); margin:0 8px;"></div>
+          <button id="btn-logout" class="pill-link" style="color:#f87171">
+            <span>↪</span><span class="pill-tooltip">Sign out</span>
           </button>
         </nav>
       </div>`;
@@ -1901,191 +1916,5 @@ function renderInvoiceView(content, id){
   };
 })();
 </script>
-  <style>
-/* ============================================================ */
-/* PC OPTIMIZATION FOR FLOATING PILL LAYOUT                     */
-/* ============================================================ */
-@media (min-width: 1024px) {
-  /* Widen the main content area so it fits the screen better */
-  .main {
-    max-width: 1450px !important; 
-    padding: 40px 40px 120px 140px !important;
-  }
-
-  /* Make the dashboard stat cards slightly larger and more spaced */
-  .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
-    gap: 20px !important;
-    margin-bottom: 24px !important;
-  }
-
-  /* Increase padding in tables so they look premium */
-  th {
-    padding: 14px 20px !important;
-    font-size: 13px !important;
-  }
-  td {
-    padding: 16px 20px !important;
-    font-size: 14px !important;
-  }
-
-  /* Give cards a little more breathing room */
-  .card {
-    padding: 24px !important;
-  }
-}
-</style>
-  <style>
-/* ============================================================ */
-/* FROSTED GLASS EFFECT (Except Backdrop)                       */
-/* ============================================================ */
-
-/* Apply glass to cards, pills, modals, and dropdowns */
-.card, 
-.stat-card, 
-.vertical-pill, 
-.horizontal-pill, 
-.modal, 
-.login-box,
-.ss-dropdown,
-.calc {
-  background: rgba(255, 255, 255, 0.65) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.6) !important;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07) !important;
-}
-
-/* Make inputs semi-transparent */
-.input, select.input, textarea.input {
-  background: rgba(255, 255, 255, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.7) !important;
-}
-.input:focus, select.input:focus, textarea.input:focus {
-  background: rgba(255, 255, 255, 1) !important;
-  border-color: var(--g) !important;
-}
-
-/* Make secondary buttons slightly glassy */
-.btn-secondary {
-  background: rgba(241, 245, 249, 0.7) !important;
-  backdrop-filter: blur(4px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
-}
-
-/* Adjust table row hover to be transparent */
-tr:hover td {
-  background: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* Ensure table headers have a glassy tint */
-th {
-  background: rgba(248, 250, 252, 0.5) !important;
-}
-
-/* Optional: Slight tint for the modal overlay so the glass pops */
-.modal-overlay {
-  background: rgba(15, 23, 42, 0.3) !important;
-  backdrop-filter: blur(4px); /* Adds a tiny blur to the background behind the modal */
-}
-</style>
-  <style>
-/* ============================================================ */
-/* PREMIUM DARK GLASSMORPHISM                                   */
-/* ============================================================ */
-
-/* 1. Rich, Deep Background */
-body {
-  background-color: #060911 !important; 
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.4), transparent 40%),
-    radial-gradient(circle at 85% 30%, rgba(6, 78, 59, 0.3), transparent 40%) !important;
-  background-attachment: fixed !important;
-  color: #f8fafc !important;
-}
-
-/* 2. Dark Glass Cards & Modals */
-.card, 
-.stat-card, 
-.vertical-pill, 
-.horizontal-pill, 
-.modal, 
-.login-box,
-.ss-dropdown,
-.calc {
-  background: rgba(30, 41, 59, 0.5) !important; /* Dark slate glass */
-  backdrop-filter: blur(24px) !important;
-  -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important; /* Subtle light border */
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5) !important;
-  color: #f8fafc !important;
-}
-
-/* 3. Typography Fixes (Make all text inside cards white/light) */
-.card h1, .card h2, .card h3, 
-.stat-label, 
-.stat-value,
-.modal h2,
-.page-header h1 {
-  color: #ffffff !important;
-}
-.page-header p { color: #94a3b8 !important; }
-.text-muted, .stat-sub { color: #94a3b8 !important; }
-
-/* 4. Table Styling for Dark Glass */
-th {
-  background: transparent !important;
-  color: #94a3b8 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-  color: #cbd5e1 !important;
-}
-tr:hover td {
-  background: rgba(255, 255, 255, 0.03) !important;
-}
-
-/* 5. Inputs (Dark Glass) */
-.input, select.input, textarea.input {
-  background: rgba(15, 23, 42, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-}
-.input:focus, select.input:focus, textarea.input:focus {
-  background: rgba(15, 23, 42, 0.8) !important;
-  border-color: #22c55e !important;
-}
-.input::placeholder { color: #64748b !important; }
-
-/* 6. Buttons */
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-}
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-}
-.btn-primary {
-  background: #16a34a !important;
-  box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.3) !important;
-}
-.card a { color: #4ade80 !important; } /* Light green links */
-
-/* 7. Floating Pill Adjustments */
-.pill-link { color: #94a3b8 !important; }
-.pill-link:hover { background: rgba(255, 255, 255, 0.1) !important; color: #ffffff !important; }
-.pill-link.active { background: rgba(22, 163, 74, 0.2) !important; color: #4ade80 !important; }
-
-/* 8. Divider lines */
-hr, .border-top { border-color: rgba(255, 255, 255, 0.1) !important; }
-
-/* 9. Overlay for Modals */
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.6) !important;
-  backdrop-filter: blur(8px) !important;
-}
-</style>
 </body>
 </html>
