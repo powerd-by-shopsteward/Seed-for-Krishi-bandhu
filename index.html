@@ -1989,5 +1989,54 @@ th {
   backdrop-filter: blur(4px); /* Adds a tiny blur to the background behind the modal */
 }
 </style>
+  <style>
+/* ============================================================ */
+/* RICH DARK BACKDROP FOR GLASSMORPHISM                          */
+/* ============================================================ */
+
+/* 1. The Dark Background */
+body {
+  background-color: #0b1120 !important; /* Deep navy base */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(46, 16, 101, 0.4) 0px, transparent 50%),   /* Purple glow top-left */
+    radial-gradient(at 100% 100%, rgba(23, 37, 84, 0.6) 0px, transparent 50%) !important; /* Blue glow bottom-right */
+  background-attachment: fixed !important;
+  color: #f8fafc !important;
+}
+
+/* 2. Fix text outside the glass cards (Page Headers, etc.) */
+.page-header h1 { color: #ffffff !important; }
+.page-header p { color: #94a3b8 !important; }
+a { color: #60a5fa !important; } /* Lighter blue for links outside cards */
+
+/* 3. Ensure text INSIDE the frosted cards stays dark for readability */
+.card, .stat-card, .modal, .login-box, .vertical-pill, .horizontal-pill {
+  color: #0f172a !important;
+}
+.card h1, .card h2, .card h3, .modal h2, .stat-value, .stat-label, .brand-text {
+  color: #0f172a !important; 
+}
+.card a { color: #15803d !important; } /* Restore green links inside cards */
+
+/* 4. Slightly adjust the frosted glass for the dark theme */
+.card, .stat-card, .vertical-pill, .horizontal-pill, .modal, .login-box, .ss-dropdown, .calc {
+  background: rgba(255, 255, 255, 0.75) !important; /* Slightly more opaque for better contrast */
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important; /* Darker shadow to pop off the dark bg */
+}
+
+/* 5. Make the floating pills text dark (since the pill is white glass) */
+.pill-link { color: #64748b !important; }
+.pill-link:hover { color: #0f172a !important; }
+.pill-link.active { color: #15803d !important; }
+
+/* 6. Fix the empty state text color outside cards */
+.empty { color: #94a3b8 !important; }
+
+/* 7. Table hover adjustment for glass */
+tr:hover td {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+</style>
 </body>
 </html>
