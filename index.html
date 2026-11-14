@@ -2053,146 +2053,177 @@ async function shareInvoicePDF(inv, items, cust){
 }
 </script>
 <!-- ========================================== -->
-<!-- SPLIT GLASSMORPHISM LOGIN (NO IMAGES)      -->
+<!-- ANGLED SPLIT GLASSMORPHISM LOGIN           -->
 <!-- ========================================== -->
 <style>
-/* Hide pills and reset background for login */
-body:has(.login-page) { margin: 0; overflow: hidden; background: #022c22 !important; }
+/* Hide pills and reset background */
+body:has(.login-page) { margin: 0; overflow: hidden; background: #ecfdf5 !important; }
 .vertical-pill, .horizontal-pill { display: none !important; }
 
-/* Fullscreen Split Container */
+/* The Split Container */
 .login-page { 
   position: fixed; inset: 0; z-index: 9999; 
-  display: flex; align-items: stretch;
-  background: #022c22; /* Deep dark green base */
+  display: flex; 
+  background: #ecfdf5; /* Cream Green Base */
 }
 
-/* Left Side: Cream Green Brand Panel */
-.login-brand-side {
-  flex: 1;
-  background: #ecfdf5; /* Cream green */
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 40px;
-  text-align: center;
-  border-right: 1px solid rgba(255,255,255,0.05);
+/* LEFT SIDE: Deep Dark Green Brand Panel */
+.brand-panel {
+  width: 55%;
+  background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+  color: #ffffff;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0 10% 0 8%;
+  /* This creates the diagonal cut */
+  clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
+  z-index: 2;
 }
 
-/* Left Side Typography */
-.login-brand-side h1 {
-  font-size: 48px;
-  font-weight: 900;
-  color: #064e3b; /* Deep green */
-  letter-spacing: -1px;
-  margin-bottom: 12px;
-  line-height: 1.1;
-}
-.login-brand-side p {
-  font-size: 16px;
-  color: #047857; /* Mid green */
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-/* Right Side: Deep Green Form Area */
-.login-form-side {
-  flex: 1;
+/* Brand Content */
+.brand-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(255,255,255,0.1);
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-  padding: 20px;
+  font-size: 24px; margin-bottom: 30px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.brand-panel h1 { font-size: 48px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; letter-spacing: -1px; }
+.brand-panel p { font-size: 16px; color: #a7f3d0; line-height: 1.6; margin-bottom: 40px; max-width: 90%; }
+.brand-features { display: flex; flex-direction: column; gap: 16px; margin-bottom: 60px; }
+.feature { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #ecfdf5; }
+.feature span { color: #34d399; font-weight: bold; font-size: 18px; }
+
+/* RIGHT SIDE: Cream Green with Glass Form */
+.form-panel {
+  width: 45%;
+  margin-left: -5%; /* Tucks under the diagonal */
+  padding-left: 8%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  background: radial-gradient(circle at 80% 20%, #d1fae5 0%, #ecfdf5 70%);
+  z-index: 1;
 }
 
-/* The Glassmorphism Login Box */
+/* Glassmorphism Form Card */
 .login-box {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
   backdrop-filter: blur(24px) !important;
   -webkit-backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 25px 50px -12px rgba(6, 78, 59, 0.15) !important;
   padding: 50px !important;
   border-radius: 24px !important;
-  max-width: 440px !important;
   width: 100% !important;
+  max-width: 420px !important;
 }
 
-/* Form Text */
-.login-box h2 { color: #ecfdf5 !important; font-weight: 800; font-size: 28px; margin-bottom: 6px; }
-.login-box p { color: #a7f3d0 !important; margin-bottom: 30px; font-size: 15px; }
+/* Form Typography */
+.login-box h2 { color: #064e3b !important; font-weight: 800; font-size: 28px; margin-bottom: 8px; }
+.login-box p { color: #047857 !important; margin-bottom: 32px; font-size: 15px; font-weight: 500; }
 
-/* Inputs */
-.login-box .label { color: #a7f3d0 !important; font-weight: 600; margin-top: 15px; }
+/* Modern Inputs with Icons */
+.input-group { position: relative; margin-bottom: 16px; }
+.input-group .input-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: #10b981; pointer-events: none;
+}
+.login-box .label { color: #064e3b !important; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 .login-box .input { 
-  background: rgba(0, 0, 0, 0.2) !important; 
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-  color: #ecfdf5 !important; 
-  padding: 16px !important; 
+  background: rgba(255, 255, 255, 0.8) !important; 
+  border: 1px solid rgba(16, 185, 129, 0.2) !important; 
+  color: #064e3b !important; 
+  padding: 16px 16px 16px 46px !important; 
   border-radius: 12px !important; 
   font-size: 15px;
 }
 .login-box .input:focus { 
-  border-color: #34d399 !important; 
-  background: rgba(0, 0, 0, 0.4) !important; 
-  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15) !important; 
+  border-color: #10b981 !important; 
+  background: #ffffff !important; 
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15) !important; 
 }
 
-/* Button */
+/* Premium Button */
 .login-box .btn-primary { 
   background: #10b981 !important; 
-  color: #022c22 !important; 
-  font-weight: 800 !important; 
+  color: #ffffff !important; 
+  font-weight: 700 !important; 
   font-size: 16px !important; 
   padding: 16px !important; 
-  margin-top: 30px; 
+  margin-top: 24px; 
   border-radius: 12px !important; 
   transition: 0.2s;
+  display: flex; justify-content: center; align-items: center; gap: 8px;
 }
 .login-box .btn-primary:hover {
-  background: #34d399 !important;
+  background: #059669 !important;
   transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.6) !important;
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .login-page { flex-direction: column !important; overflow-y: auto; }
-  .login-brand-side { flex: none; padding: 60px 20px; }
-  .login-brand-side h1 { font-size: 36px; }
-  .login-form-side { padding: 40px 20px; }
+  .brand-panel { 
+    width: 100% !important; 
+    clip-path: none !important; 
+    padding: 60px 20px !important; 
+    text-align: center; 
+    align-items: center;
+  }
+  .brand-panel h1 { font-size: 36px; }
+  .brand-features { display: none; /* Hide features on mobile to save space */ }
+  .form-panel { width: 100% !important; margin-left: 0 !important; padding: 40px 20px !important; }
   .login-box { padding: 30px !important; }
 }
 </style>
 
 <script>
 (function() {
-  // Override the login function to build the new split layout
+  // Override the login function to build the new angled split layout
   window.renderLogin = function() {
     document.getElementById('app').innerHTML = `
       <div class="login-page">
         
-        <!-- Left Side: Cream Green Brand -->
-        <div class="login-brand-side">
-          <h1>KRISHI<br>BANDHU</h1>
-          <p>Seed Shop Manager</p>
+        <!-- Left Side: Dark Green Branding -->
+        <div class="brand-panel">
+          <div class="brand-icon">🌱</div>
+          <h1>Krishi<br>Bandhu</h1>
+          <p>Seed Shop Manager. Invoices, inventory, and payments — all in one calm, private place built for your shop.</p>
+          
+          <div class="brand-features">
+            <div class="feature"><span>✓</span> Dual-unit pricing tracking</div>
+            <div class="feature"><span>✓</span> Real-time stock & dues tracking</div>
+            <div class="feature"><span>✓</span> Automatic profit margins</div>
+          </div>
         </div>
 
-        <!-- Right Side: Dark Green Glass Form -->
-        <div class="login-form-side">
+        <!-- Right Side: Cream Green Form Area -->
+        <div class="form-panel">
           <form id="login-form" class="login-box">
-            <h2>Welcome Back</h2>
-            <p>Sign in to manage your shop</p>
+            <h2>Welcome back</h2>
+            <p>Sign in to your shop dashboard</p>
             
             <div class="form-row">
               <label class="label">Email</label>
-              <input class="input" type="email" id="l-email" required autocomplete="username">
+              <div class="input-group">
+                <span class="input-icon">✉️</span>
+                <input class="input" type="email" id="l-email" required autocomplete="username" placeholder="owner@example.com">
+              </div>
             </div>
             
             <div class="form-row">
               <label class="label">Password</label>
-              <input class="input" type="password" id="l-pwd" required autocomplete="current-password">
+              <div class="input-group">
+                <span class="input-icon">🔒</span>
+                <input class="input" type="password" id="l-pwd" required autocomplete="current-password" placeholder="Enter your password">
+              </div>
             </div>
             
-            <div id="l-err" style="color:#fca5a5;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;"></div>
+            <div id="l-err" style="color:#dc2626;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;font-weight:600;"></div>
             
-            <button class="btn btn-primary btn-block" type="submit" id="l-btn">Sign in</button>
+            <button class="btn btn-primary btn-block" type="submit" id="l-btn">
+              Sign In <span>→</span>
+            </button>
           </form>
         </div>
         
@@ -2202,14 +2233,14 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #022c22 !import
     document.getElementById('login-form').onsubmit = async e => {
       e.preventDefault();
       const errEl = document.getElementById('l-err'); errEl.style.display='none';
-      const btn = document.getElementById('l-btn'); btn.disabled=true; btn.textContent='Signing in...';
+      const btn = document.getElementById('l-btn'); btn.disabled=true; btn.innerHTML='Signing in...';
       try{
         await login(document.getElementById('l-email').value.trim(), document.getElementById('l-pwd').value);
         await syncDB();
         await route();
       }catch(err){
         errEl.textContent = err.message; errEl.style.display='block';
-        btn.disabled=false; btn.textContent='Sign in';
+        btn.disabled=false; btn.innerHTML='Sign In <span>→</span>';
       }
     };
   };
