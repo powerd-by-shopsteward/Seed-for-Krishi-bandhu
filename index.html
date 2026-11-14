@@ -563,7 +563,7 @@ function renderProducts(content){
   renderTable();
 }
 
-// 1. NEW: Show all past prices (This was missing from your file)
+// 1. UPDATED: Show all past prices AND how much stock was added
 function openPriceHistory(p){
   const prices = DB.prices.filter(x => x.product_id === p.id).sort((a,b) => b.effective_date.localeCompare(a.effective_date));
   openModal(`
@@ -571,17 +571,24 @@ function openPriceHistory(p){
     <p style="font-size:13px;color:var(--mu);margin-bottom:14px">1 ${esc(p.pack_unit)} = ${fmtNum(p.pack_size)} ${esc(p.base_unit)}</p>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Effective Date</th><th class="text-right">Sell (${esc(p.base_unit)})</th><th class="text-right">Sell (${esc(p.pack_unit)})</th><th class="text-right">Cost (${esc(p.base_unit)})</th></tr></thead>
+        <thead><tr><th>Effective Date</th><th>Stock Added</th><th class="text-right">Sell (${esc(p.base_unit)})</th><th class="text-right">Sell (${esc(p.pack_unit)})</th><th class="text-right">Cost (${esc(p.base_unit)})</th></tr></thead>
         <tbody>
-          ${prices.length===0 ? '<tr><td colspan="4" class="empty">No price records</td></tr>' : 
-            prices.map(pr => `
-            <tr>
-              <td style="font-weight:500">${fmtDate(pr.effective_date)}</td>
-              <td class="text-right">${rs(pr.sell_price_base)}</td>
-              <td class="text-right">${rs(pr.sell_price_pack)}</td>
-              <td class="text-right" style="color:var(--mu)">${rs(pr.cost_price_base)}</td>
-            </tr>
-          `).join('')}
+          ${prices.length===0 ? '<tr><td colspan="5" class="empty">No price records</td></tr>' : 
+            prices.map(pr => {
+              // Format the stock added string
+              let stockStr = '-';
+              if (Number(pr.stock_added_pack) > 0) stockStr = `${fmtNum(pr.stock_added_pack)} ${esc(p.pack_unit)}`;
+              else if (Number(pr.stock_added_base) > 0) stockStr = `${fmtNum(pr.stock_added_base)} ${esc(p.base_unit)}`;
+
+              return `
+              <tr>
+                <td style="font-weight:500">${fmtDate(pr.effective_date)}</td>
+                <td style="color:var(--gd);font-weight:600">${stockStr}</td>
+                <td class="text-right">${rs(pr.sell_price_base)}</td>
+                <td class="text-right">${rs(pr.sell_price_pack)}</td>
+                <td class="text-right" style="color:var(--mu)">${rs(pr.cost_price_base)}</td>
+              </tr>
+            `}).join('')}
         </tbody>
       </table>
     </div>
@@ -591,7 +598,7 @@ function openPriceHistory(p){
   `);
 }
 
-// 2. NEW: Add Stock & Price together (For new shipments)
+// 2. UPDATED: Add Stock & Price together (Now records the quantity)
 function openNewBatchForm(p){
   const today = todayStr();
   const current = resolvePrice(p.id, today);
@@ -639,15 +646,32 @@ function openNewBatchForm(p){
       const baseQty = isPack ? qty * Number(p.pack_size) : qty;
       const newStock = Number(p.stock) + baseQty;
       
+      // 1. Update stock in products table
       const { error: stkErr } = await sb.from('seeds_products').update({ stock: newStock }).eq('id', p.id);
       if(stkErr){ toast(stkErr.message, 'error'); btn.disabled = false; btn.textContent = 'Save Batch'; return; }
       
+      // 2. Check if a price already exists for today so we can add to the batch quantity
+      const { data: existingPrice } = await sb.from('seeds_prices')
+        .select('stock_added_base, stock_added_pack')
+        .eq('product_id', p.id)
+        .eq('effective_date', today)
+        .maybeSingle();
+
+      const prevBase = Number(existingPrice?.stock_added_base || 0);
+      const prevPack = Number(existingPrice?.stock_added_pack || 0);
+
+      const newBaseAdded = prevBase + (isPack ? 0 : qty);
+      const newPackAdded = prevPack + (isPack ? qty : 0);
+
+      // 3. Insert/Update price for today along with the batch size
       const { error: prErr } = await sb.from('seeds_prices').upsert({
         product_id: p.id,
         effective_date: today,
         sell_price_base: Number(fd.get('sell_price_base')) || 0,
         sell_price_pack: Number(fd.get('sell_price_pack')) || 0,
-        cost_price_base: Number(fd.get('cost_price_base')) || 0
+        cost_price_base: Number(fd.get('cost_price_base')) || 0,
+        stock_added_base: newBaseAdded,
+        stock_added_pack: newPackAdded
       }, { onConflict: 'product_id,effective_date' });
       
       if(prErr){ toast('Stock updated, but price failed: ' + prErr.message, 'error'); btn.disabled = false; btn.textContent = 'Save Batch'; return; }
