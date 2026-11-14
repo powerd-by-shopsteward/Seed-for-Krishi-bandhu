@@ -2052,12 +2052,15 @@ async function shareInvoicePDF(inv, items, cust){
   }
 }
 </script>
+<!-- ========================================== -->
+<!-- NEW LOGIN SCREEN WITH YOUR LOCAL PNG       -->
+<!-- ========================================== -->
 <style>
-/* Hide pills and reset background */
-body:has(.login-page) { margin: 0; overflow: hidden; }
+/* Hide pills on login page & reset background */
+body:has(.login-page) { margin: 0; overflow: hidden; background: #ffffff; }
 .vertical-pill, .horizontal-pill { display: none !important; }
 
-/* The Fullscreen Split Container */
+/* Fullscreen Split Container */
 .login-page { 
   position: fixed; inset: 0; z-index: 9999; 
   display: flex; align-items: stretch;
@@ -2065,21 +2068,43 @@ body:has(.login-page) { margin: 0; overflow: hidden; }
 }
 
 /* Left Side: Green Brand Panel */
-.login-page::before {
-  content: "KRISHI BANDHU\A\A Seed Shop Manager";
-  white-space: pre-wrap;
+.login-brand-side {
+  flex: 1;
   background: #16a34a;
   color: #ffffff;
-  flex: 1; /* Takes up left half */
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 40px; font-weight: 800; letter-spacing: 1px; line-height: 1.2;
-  text-align: center;
   padding: 40px;
+  text-align: center;
+}
+
+/* The Picture */
+.login-brand-side img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%; /* Makes the image a perfect circle */
+  border: 4px solid rgba(255,255,255,0.3);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  margin-bottom: 24px;
+  background: #ffffff; /* In case your png has a transparent background */
+}
+
+/* The Text */
+.login-brand-side h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+.login-brand-side p {
+  font-size: 16px;
+  color: #dcfce7;
+  font-weight: 500;
 }
 
 /* Right Side: White Form Panel */
 .login-box {
-  flex: 1; /* Takes up right half */
+  flex: 1;
   background: #ffffff !important;
   border: none !important; box-shadow: none !important;
   max-width: 100% !important;
@@ -2087,10 +2112,9 @@ body:has(.login-page) { margin: 0; overflow: hidden; }
   display: flex; flex-direction: column; justify-content: center;
 }
 
-/* Hide the original title since it's in the green box now */
-.login-box h1, .login-box p { display: none !important; }
-
-/* Form Elements */
+/* Form Styling */
+.login-box h2 { color: #0f172a !important; font-weight: 800; font-size: 28px; margin-bottom: 6px; }
+.login-box p { color: #64748b !important; margin-bottom: 30px; font-size: 15px; }
 .login-box .label { color: #475569 !important; font-weight: 600; margin-top: 15px; }
 .login-box .input { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; padding: 14px !important; border-radius: 10px !important; }
 .login-box .input:focus { border-color: #16a34a !important; background: #ffffff !important; box-shadow: 0 0 0 4px rgba(22,163,74,0.1) !important; }
@@ -2098,10 +2122,70 @@ body:has(.login-page) { margin: 0; overflow: hidden; }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .login-page { flex-direction: column !important; }
-  .login-page::before { flex: none; padding: 60px 20px; font-size: 28px; }
+  .login-page { flex-direction: column !important; overflow-y: auto; }
+  .login-brand-side { flex: none; padding: 60px 20px; }
+  .login-brand-side img { width: 110px; height: 110px; }
+  .login-brand-side h1 { font-size: 28px; }
   .login-box { padding: 40px 20px !important; }
 }
 </style>
+
+<script>
+(function() {
+  // Override the login function to include your picture
+  window.renderLogin = function() {
+    
+    // 👇 CHANGE 'logo.png' TO YOUR ACTUAL FILE NAME IF IT IS DIFFERENT
+    const pictureUrl = SETTINGS.logo || 'logo.png'; 
+    
+    document.getElementById('app').innerHTML = `
+      <div class="login-page">
+        
+        <!-- Left Side: Picture & Brand -->
+        <div class="login-brand-side">
+          <img src="${pictureUrl}" alt="Shop Logo">
+          <h1>${esc(SETTINGS.shop_name||'KRISHI BANDHU')}</h1>
+          <p>Seed Shop Manager</p>
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <form id="login-form" class="login-box">
+          <h2>Welcome Back</h2>
+          <p>Sign in to manage your shop</p>
+          
+          <div class="form-row">
+            <label class="label">Email</label>
+            <input class="input" type="email" id="l-email" required autocomplete="username">
+          </div>
+          
+          <div class="form-row">
+            <label class="label">Password</label>
+            <input class="input" type="password" id="l-pwd" required autocomplete="current-password">
+          </div>
+          
+          <div id="l-err" style="color:var(--r);font-size:12px;display:none;margin-bottom:12px;margin-top:10px;"></div>
+          
+          <button class="btn btn-primary btn-block" type="submit" id="l-btn">Sign in</button>
+        </form>
+        
+      </div>`;
+
+    // Handle the login submit
+    document.getElementById('login-form').onsubmit = async e => {
+      e.preventDefault();
+      const errEl = document.getElementById('l-err'); errEl.style.display='none';
+      const btn = document.getElementById('l-btn'); btn.disabled=true; btn.textContent='Signing in...';
+      try{
+        await login(document.getElementById('l-email').value.trim(), document.getElementById('l-pwd').value);
+        await syncDB();
+        await route();
+      }catch(err){
+        errEl.textContent = err.message; errEl.style.display='block';
+        btn.disabled=false; btn.textContent='Sign in';
+      }
+    };
+  };
+})();
+</script>
 </body>
 </html>
