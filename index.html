@@ -2252,5 +2252,13 @@ body:has(.login-page) { margin: 0; overflow: hidden; background: #1a1a1a !import
   };
 })();
 </script>
+  <script>
+  // Force the app to re-render the layout so the floating pills appear immediately
+  setTimeout(() => {
+    if (typeof route === 'function') {
+      route();
+    }
+  }, 100);
+</script>
 </body>
 </html>
