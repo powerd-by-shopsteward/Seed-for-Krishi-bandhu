@@ -1781,134 +1781,52 @@ function renderInvoiceView(content, id){
 }
 </script>
 <!-- ========================================== -->
-<!-- FINAL: MATTE GRAY + STURDY GLASS + PILLS   -->
+<!-- CLEAN UI + FLOATING PILLS (PASTE AT BOTTOM)-->
 <!-- ========================================== -->
-
 <style>
-/* 1. Matte Gray Background */
-body {
-  background-color: #1a1a1a !important; /* Clean matte gray */
-  background-image: none !important;    /* Removes the aurora gradients */
-  background-attachment: fixed !important;
-  color: #f8fafc !important;
-  font-size: 15px;
-}
+/* 1. CLEAN WHITE THEME (No grays, no glass) */
+body { background-color: #f8fafc !important; color: #0f172a !important; }
+.card, .stat-card { background: #ffffff !important; border: 1px solid #e2e8f0 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important; color: #0f172a !important; backdrop-filter: none !important; padding: 24px !important; margin-bottom: 24px !important;}
+.page-header h1 { color: #0f172a !important; font-size: 26px !important; }
+.page-header p { color: #64748b !important; }
+h1, h2, h3 { color: #0f172a !important; }
+th { color: #64748b !important; border-bottom: 1px solid #e2e8f0 !important; background: transparent !important; padding: 14px 16px !important; }
+td { color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; padding: 16px !important; }
+.input { background: #f8fafc !important; border: 1px solid #e2e8f0 !important; color: #0f172a !important; padding: 12px 16px !important; }
+.btn-secondary { background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #e2e8f0 !important; }
+.btn-primary { background: #16a34a !important; color: #fff !important; }
+.stats-grid { gap: 20px !important; }
+.stat-value { font-size: 26px !important; margin-top: 6px !important; }
 
-/* Hide old layout completely */
+/* Hide old sidebar completely */
 .sidebar, .mobile-nav, .mobile-header { display: none !important; }
 .layout { display: block !important; }
 
-/* 2. Stretch Everything to Fit Screen */
-.main {
-  max-width: 100% !important; 
-  padding: 40px 60px 140px 140px !important; 
-  margin: 0 auto;
-}
-
-/* Make Cards Bigger */
-.card, .stat-card {
-  padding: 28px !important;
-  margin-bottom: 24px !important;
-}
-.stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
-  gap: 24px !important;
-}
-.stat-value { font-size: 28px !important; margin-top: 8px !important; }
-.stat-label { font-size: 13px !important; }
-.page-header h1 { font-size: 28px !important; }
-
-/* Make Tables Breathe */
-th { padding: 16px 20px !important; font-size: 14px !important; background: transparent !important; color: #94a3b8 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }
-td { padding: 18px 20px !important; font-size: 15px !important; color: #cbd5e1 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; }
-tr:hover td { background: rgba(255, 255, 255, 0.04) !important; }
-
-/* 3. Sturdy, Transparent Dark Glass */
-.card, .stat-card, .vertical-pill, .horizontal-pill, .modal, .login-box, .ss-dropdown, .calc {
-  background: rgba(30, 41, 59, 0.4) !important; 
-  backdrop-filter: blur(32px) saturate(150%) !important; 
-  -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important; 
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6) !important;
-  color: #f8fafc !important;
-}
-
-/* 4. Typography & Details */
-.card h1, .card h2, .card h3, .modal h2, .page-header h1 { color: #ffffff !important; }
-.page-header p { color: #94a3b8 !important; font-size: 15px !important; }
-.card a { color: #4ade80 !important; }
-.text-muted, .stat-sub { color: #94a3b8 !important; }
-
-/* 5. Inputs & Buttons */
-.input, select.input, textarea.input {
-  background: rgba(15, 23, 42, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-  padding: 12px 16px !important;
-  font-size: 15px !important;
-}
-.input:focus, select.input:focus, textarea.input:focus {
-  background: rgba(15, 23, 42, 0.9) !important;
-  border-color: #4ade80 !important;
-}
-.btn { padding: 12px 20px !important; font-size: 14px !important; }
-.btn-secondary { background: rgba(255, 255, 255, 0.1) !important; color: #fff !important; border: 1px solid rgba(255,255,255,0.1) !important; }
-.btn-secondary:hover { background: rgba(255, 255, 255, 0.15) !important; }
-.btn-primary { background: #16a34a !important; box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.3) !important; }
-
-
-/* ========================================== */
-/* FLOATING PILLS STYLING                     */
-/* ========================================== */
-.vertical-pill {
-  position: fixed; left: 30px; top: 50%; transform: translateY(-50%);
-  border-radius: 40px; padding: 16px 0;
-  display: flex; flex-direction: column; gap: 8px; z-index: 100;
-}
-
-.horizontal-pill {
-  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-  border-radius: 40px; padding: 0 16px;
-  display: flex; align-items: center; gap: 8px; height: 72px; z-index: 100;
-}
-
-.pill-link {
-  position: relative; width: 56px; height: 56px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  color: #94a3b8; font-size: 24px; text-decoration: none; transition: 0.2s;
-  background: transparent; border: none; cursor: pointer;
-}
-.pill-link:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
-.pill-link.active { background: rgba(74, 222, 128, 0.15); color: #4ade80; }
-
-/* Tooltips */
-.pill-tooltip {
-  position: absolute; background: #1e293b; color: #fff;
-  padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
-  white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: 0.2s; z-index: 101;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
-}
-
+/* 2. FLOATING PILLS STYLING */
+.main { padding: 40px 60px 140px 140px !important; max-width: 1400px; margin: 0 auto; }
+.vertical-pill { position: fixed; left: 30px; top: 50%; transform: translateY(-50%); background: #fff; border-radius: 40px; padding: 16px 0; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; flex-direction: column; gap: 8px; z-index: 100; border: 1px solid #e2e8f0; }
+.horizontal-pill { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #fff; border-radius: 40px; padding: 0 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 8px; height: 72px; z-index: 100; border: 1px solid #e2e8f0; }
+.pill-link { position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 24px; text-decoration: none; transition: 0.2s; background: transparent; border: none; cursor: pointer; }
+.pill-link:hover { background: #f1f5f9; color: #0f172a; }
+.pill-link.active { background: #f0fdf4; color: #16a34a; }
+.pill-tooltip { position: absolute; background: #1e293b; color: #fff; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 500; white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: 0.2s; z-index: 101; }
 .vertical-pill .pill-link .pill-tooltip { left: 70px; top: 50%; transform: translateY(-50%) translateX(-10px); }
 .vertical-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateY(-50%) translateX(0); }
-
 .horizontal-pill .pill-link .pill-tooltip { bottom: 70px; left: 50%; transform: translateX(-50%) translateY(10px); }
 .horizontal-pill .pill-link:hover .pill-tooltip { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
-/* Mobile Adjustments */
+/* Mobile */
 @media(max-width: 768px) {
   .main { padding: 20px 15px 110px 15px !important; }
   .vertical-pill { left: 10px; padding: 8px 0; }
   .horizontal-pill { bottom: 10px; height: 60px; padding: 0 8px; gap: 4px; }
   .pill-link { width: 44px; height: 44px; font-size: 20px; }
-  .vertical-pill .pill-link .pill-tooltip { left: 55px; }
-  .horizontal-pill .pill-link .pill-tooltip { bottom: 60px; }
 }
 </style>
 
 <script>
 (function() {
-  // Override layout to use Floating Pills
+  // OVERRIDE the layout function with the pills version
   window.renderLayout = function() {
     const hash = location.hash || '#/';
     
@@ -1936,392 +1854,12 @@ tr:hover td { background: rgba(255, 255, 255, 0.04) !important; }
 
     document.getElementById('app').innerHTML = `
       <div class="layout">
-        <!-- Left Vertical Pill -->
-        <nav class="vertical-pill">
-          ${vnavHTML}
-        </nav>
-
-        <!-- Main Content Area -->
-        <main id="content" class="main"></main>
-        
-        <!-- Bottom Horizontal Pill -->
-        <nav class="horizontal-pill">
-          ${hnavHTML}
-          <div style="width:1px; height:32px; background:rgba(255,255,255,0.15); margin:0 8px;"></div>
-          <button id="btn-logout" class="pill-link" style="color:#f87171">
-            <span>↪</span><span class="pill-tooltip">Sign out</span>
-          </button>
-        </nav>
-      </div>`;
-      
-    document.getElementById('btn-logout').onclick = logout;
-  };
-})();
-</script>
-  <script>
-/* ---------- MISSING PDF & SHARE FUNCTIONS ---------- */
-function buildInvoicePDF(inv, items, cust){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  let y = 15;
-  
-  doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor(22,163,74);
-  doc.text(SETTINGS.shop_name||'Seed Shop', 14, y); y += 6;
-  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(71,85,105);
-  if(SETTINGS.owner_name){ doc.text(SETTINGS.owner_name, 14, y); y += 4; }
-  if(SETTINGS.address){ doc.text(SETTINGS.address, 14, y, {maxWidth:100}); y += 4; }
-  if(SETTINGS.phone){ doc.text('Ph: '+SETTINGS.phone, 14, y); y += 4; }
-  if(SETTINGS.license){ doc.text('License: '+SETTINGS.license, 14, y); y += 4; }
-  
-  doc.setTextColor(30,41,59); doc.setFontSize(12); doc.setFont('helvetica','bold');
-  doc.text(inv.invoice_no, 196, 15, {align:'right'});
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text(fmtDate(inv.invoice_date), 196, 21, {align:'right'});
-  doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.text('Bill To:', 14, y+6);
-  doc.setFont('helvetica','normal');
-  doc.text(cust?.name||'Walk-in Customer', 14, y+11);
-  if(cust?.phone) doc.text(cust.phone, 14, y+16);
-  y += 22;
-  
-  doc.autoTable({
-    startY:y,
-    head:[['Item','Unit','Qty','Rate','Amount']],
-    body: items.map(it=>[it.product_name, it.unit, fmtNum(it.qty), rs(it.sell_price).replace('₹',''), rs(it.total).replace('₹','')]),
-    theme:'grid',
-    headStyles:{fillColor:[22,163,74],textColor:255,fontSize:10},
-    bodyStyles:{fontSize:9},
-    columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},
-    margin:{left:14,right:14}
-  });
-  
-  y = doc.lastAutoTable.finalY + 8;
-  if(y > 250){ doc.addPage(); y = 20; }
-  const rightX = 196;
-  
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text('Subtotal:', 140, y); doc.text(rs(inv.subtotal).replace('₹',''), rightX, y, {align:'right'}); y += 5;
-  if(Number(inv.discount)>0){ doc.text('Discount:', 140, y); doc.text('-'+rs(inv.discount).replace('₹',''), rightX, y, {align:'right'}); y += 5; }
-  doc.setFont('helvetica','bold'); doc.text('Total:', 140, y); doc.text(rs(inv.total).replace('₹',''), rightX, y, {align:'right'}); y += 5;
-  doc.setFont('helvetica','normal'); doc.text('Paid:', 140, y); doc.text(rs(inv.paid).replace('₹',''), rightX, y, {align:'right'}); y += 5;
-  doc.text('Due:', 140, y); doc.text(rs(inv.due).replace('₹',''), rightX, y, {align:'right'});
-  
-  return doc;
-}
-
-function downloadInvoicePDF(inv, items, cust){
-  try {
-    const doc = buildInvoicePDF(inv, items, cust);
-    doc.save(inv.invoice_no + '.pdf');
-  } catch(e) {
-    toast('PDF Error: ' + e.message, 'error');
-    console.error(e);
-  }
-}
-
-async function shareInvoicePDF(inv, items, cust){
-  try{
-    const doc = buildInvoicePDF(inv, items, cust);
-    const blob = doc.output('blob');
-    const file = new File([blob], inv.invoice_no+'.pdf', {type:'application/pdf'});
-    
-    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
-      try{
-        await navigator.share({
-          files:[file], 
-          title:'Invoice '+inv.invoice_no, 
-          text:'Invoice from '+(SETTINGS.shop_name||'Seed Shop')
-        });
-      }catch(err){ 
-        if(err.name === 'AbortError') return; // User cancelled share
-        throw err; 
-      }
-    } else {
-      // Fallback for PC/Desktop where Web Share API isn't supported
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); 
-      a.href = url; 
-      a.download = inv.invoice_no+'.pdf'; 
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('PDF downloaded — open WhatsApp to share it manually', 'info');
-    }
-  }catch(e){ 
-    toast('Share failed: ' + e.message, 'error'); 
-    console.error(e);
-  }
-}
-</script>
-<!-- ========================================== -->
-<!-- DARK GREY ANGLED SPLIT GLASS LOGIN         -->
-<!-- ========================================== -->
-<style>
-/* Hide pills and reset background */
-body:has(.login-page) { margin: 0; overflow: hidden; background: #1a1a1a !important; }
-.vertical-pill, .horizontal-pill { display: none !important; }
-
-/* The Split Container */
-.login-page { 
-  position: fixed; inset: 0; z-index: 9999; 
-  display: flex; 
-  background: #1a1a1a; /* Matte Gray Base */
-}
-
-/* LEFT SIDE: Darker Slate Brand Panel */
-.brand-panel {
-  width: 55%;
-  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-  color: #ffffff;
-  display: flex; flex-direction: column; justify-content: center;
-  padding: 0 10% 0 8%;
-  /* Diagonal cut */
-  clip-path: polygon(0 0, 100% 0, 85% 100%, 0% 100%);
-  z-index: 2;
-  border-right: 1px solid rgba(255,255,255,0.05); /* subtle edge */
-}
-
-/* Brand Content */
-.brand-icon {
-  width: 56px; height: 56px; border-radius: 16px;
-  background: rgba(74, 222, 128, 0.1);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; margin-bottom: 30px;
-  border: 1px solid rgba(74, 222, 128, 0.2);
-  box-shadow: 0 0 20px rgba(74, 222, 128, 0.1);
-}
-.brand-panel h1 { font-size: 52px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; letter-spacing: -1px; }
-.brand-panel p { font-size: 16px; color: #94a3b8; line-height: 1.6; margin-bottom: 40px; max-width: 90%; }
-.brand-features { display: flex; flex-direction: column; gap: 16px; margin-bottom: 60px; }
-.feature { display: flex; align-items: center; gap: 12px; font-size: 15px; color: #cbd5e1; font-weight: 500;}
-.feature span { color: #4ade80; font-weight: bold; font-size: 18px; }
-
-/* RIGHT SIDE: Matte Gray Form Area */
-.form-panel {
-  width: 45%;
-  margin-left: -5%; /* Tucks under the diagonal */
-  padding-left: 8%;
-  display: flex; align-items: center; justify-content: center;
-  position: relative;
-  background: #1a1a1a;
-  z-index: 1;
-}
-
-/* Glassmorphism Form Card */
-.login-box {
-  background: rgba(30, 41, 59, 0.4) !important;
-  backdrop-filter: blur(32px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(150%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6) !important;
-  padding: 50px !important;
-  border-radius: 24px !important;
-  width: 100% !important;
-  max-width: 420px !important;
-}
-
-/* Form Typography */
-.login-box h2 { color: #ffffff !important; font-weight: 800; font-size: 28px; margin-bottom: 8px; }
-.login-box p { color: #94a3b8 !important; margin-bottom: 32px; font-size: 15px; font-weight: 500; }
-
-/* Modern Inputs with Icons */
-.input-group { position: relative; margin-bottom: 20px; }
-.input-group .input-icon {
-  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-  font-size: 18px; color: #64748b; pointer-events: none;
-}
-.login-box .label { color: #cbd5e1 !important; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-.login-box .input { 
-  background: rgba(15, 23, 42, 0.6) !important; 
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-  color: #ffffff !important; 
-  padding: 16px 16px 16px 46px !important; 
-  border-radius: 12px !important; 
-  font-size: 15px;
-}
-.login-box .input::placeholder { color: #64748b !important; }
-.login-box .input:focus { 
-  border-color: #4ade80 !important; 
-  background: rgba(15, 23, 42, 0.9) !important; 
-  box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.1) !important; 
-}
-
-/* Premium Button */
-.login-box .btn-primary { 
-  background: #16a34a !important; 
-  color: #ffffff !important; 
-  font-weight: 700 !important; 
-  font-size: 16px !important; 
-  padding: 16px !important; 
-  margin-top: 24px; 
-  border-radius: 12px !important; 
-  transition: 0.2s;
-  display: flex; justify-content: center; align-items: center; gap: 8px;
-  box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.3) !important;
-}
-.login-box .btn-primary:hover {
-  background: #15803d !important;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -10px rgba(22, 163, 74, 0.6) !important;
-}
-
-/* Mobile Responsive */
-@media (max-width: 900px) {
-  .login-page { flex-direction: column !important; overflow-y: auto; }
-  .brand-panel { 
-    width: 100% !important; 
-    clip-path: none !important; 
-    padding: 60px 20px !important; 
-    text-align: center; 
-    align-items: center;
-    border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .brand-panel h1 { font-size: 36px; }
-  .brand-features { display: none; /* Hide features on mobile to save space */ }
-  .form-panel { width: 100% !important; margin-left: 0 !important; padding: 40px 20px !important; }
-  .login-box { padding: 30px !important; }
-}
-</style>
-
-<script>
-(function() {
-  // Override the login function to build the new angled split layout
-  window.renderLogin = function() {
-    document.getElementById('app').innerHTML = `
-      <div class="login-page">
-        
-        <!-- Left Side: Slate Branding -->
-        <div class="brand-panel">
-          <div class="brand-icon">🌱</div>
-          <h1>Krishi<br>Bandhu</h1>
-          <p>Seed Shop Manager. Invoices, inventory, and payments — all in one calm, private place built for your shop.</p>
-          
-          <div class="brand-features">
-            <div class="feature"><span>✓</span> Dual-unit pricing tracking</div>
-            <div class="feature"><span>✓</span> Real-time stock & dues tracking</div>
-            <div class="feature"><span>✓</span> Automatic profit margins</div>
-          </div>
-        </div>
-
-        <!-- Right Side: Matte Gray Form Area -->
-        <div class="form-panel">
-          <form id="login-form" class="login-box">
-            <h2>Welcome back</h2>
-            <p>Sign in to your shop dashboard</p>
-            
-            <div class="form-row">
-              <label class="label">Email</label>
-              <div class="input-group">
-                <span class="input-icon">✉️</span>
-                <input class="input" type="email" id="l-email" required autocomplete="username" placeholder="owner@example.com">
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <label class="label">Password</label>
-              <div class="input-group">
-                <span class="input-icon">🔒</span>
-                <input class="input" type="password" id="l-pwd" required autocomplete="current-password" placeholder="Enter your password">
-              </div>
-            </div>
-            
-            <div id="l-err" style="color:#f87171;font-size:13px;display:none;margin-bottom:12px;margin-top:10px;font-weight:600;"></div>
-            
-            <button class="btn btn-primary btn-block" type="submit" id="l-btn">
-              Sign In <span>→</span>
-            </button>
-          </form>
-        </div>
-        
-      </div>`;
-
-    // Handle the login submit
-    document.getElementById('login-form').onsubmit = async e => {
-      e.preventDefault();
-      const errEl = document.getElementById('l-err'); errEl.style.display='none';
-      const btn = document.getElementById('l-btn'); btn.disabled=true; btn.innerHTML='Signing in...';
-      try{
-        await login(document.getElementById('l-email').value.trim(), document.getElementById('l-pwd').value);
-        await syncDB();
-        await route();
-      }catch(err){
-        errEl.textContent = err.message; errEl.style.display='block';
-        btn.disabled=false; btn.innerHTML='Sign In <span>→</span>';
-      }
-    };
-  };
-})();
-</script>
-  <!-- ========================================== -->
-<!-- PERFORMANCE BOOST + FIXED LAYOUT           -->
-<!-- ========================================== -->
-<style>
-/* 1. Hardware Acceleration (Forces 90+ FPS) */
-.card, .stat-card, .vertical-pill, .horizontal-pill, .modal, .pill-link {
-  will-change: transform, opacity;
-  transform: translateZ(0); /* Forces GPU rendering */
-  backface-visibility: hidden;
-}
-
-/* 2. Reduce Blur (Massive FPS boost, looks identical) */
-.card, .stat-card, .vertical-pill, .horizontal-pill, .modal, .login-box {
-  backdrop-filter: blur(16px) saturate(130%) !important; 
-  -webkit-backdrop-filter: blur(16px) saturate(130%) !important;
-  background: rgba(30, 41, 59, 0.6) !important; /* Slightly more opaque so less blur is needed */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important; /* Lighter shadow */
-}
-
-/* 3. Smooth Hover Transitions */
-tr, .btn, .pill-link, .input {
-  transition: background-color 0.15s ease-out, color 0.15s ease-out, transform 0.15s ease-out !important;
-}
-
-/* 4. Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
-}
-</style>
-  <script>
-(function() {
-  // 1. Build the layout with pills
-  window.renderLayout = function() {
-    const hash = location.hash || '#/';
-    
-    const primaryNAV = [
-      ['#/', '📊', 'Dashboard'], 
-      ['#/customers', '👥', 'Customers'],
-      ['#/invoices', '📄', 'Invoices'], 
-      ['#/reports', '📈', 'Reports']
-    ];
-    const secondaryNAV = [
-      ['#/products', '📦', 'Products'], 
-      ['#/suppliers', '🚚', 'Suppliers'], 
-      ['#/profile', '⚙️', 'Shop Profile']
-    ];
-
-    const vnavHTML = primaryNAV.map(([h, i, l]) => {
-      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
-      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
-    }).join('');
-
-    const hnavHTML = secondaryNAV.map(([h, i, l]) => {
-      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
-      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
-    }).join('');
-
-    document.getElementById('app').innerHTML = `
-      <div class="layout">
-        <!-- Vertical Pills -->
         <nav class="vertical-pill">${vnavHTML}</nav>
-        
-        <!-- Main Content -->
         <main id="content" class="main"></main>
-        
-        <!-- Horizontal Pills -->
         <nav class="horizontal-pill">
           ${hnavHTML}
-          <div style="width:1px; height:32px; background:rgba(255,255,255,0.15); margin:0 8px;"></div>
-          <button id="btn-logout" class="pill-link" style="color:#f87171">
+          <div style="width:1px; height:32px; background:#e2e8f0; margin:0 8px;"></div>
+          <button id="btn-logout" class="pill-link" style="color:#ef4444">
             <span>↪</span><span class="pill-tooltip">Sign out</span>
           </button>
         </nav>
@@ -2330,26 +1868,15 @@ html {
     document.getElementById('btn-logout').onclick = logout;
   };
 
-  // 2. Override the router to force the pills to show up instantly
-  const originalRoute = window.route;
-  window.route = function() {
-    if (typeof SESSION !== 'undefined' && SESSION) {
-      // If the pills aren't on the screen yet, draw them now!
-      if (!document.querySelector('.vertical-pill')) {
-        window.renderLayout();
+  // FORCE the app to load the pills immediately on startup
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      if (typeof SESSION !== 'undefined' && SESSION) {
+        if (typeof route === 'function') route();
       }
-    }
-    return originalRoute.apply(this, arguments);
-  };
-
-  // 3. Force the app to refresh the layout immediately when it finishes loading
-  setTimeout(() => {
-    if (typeof SESSION !== 'undefined' && SESSION) {
-      window.route();
-    }
-  }, 100);
+    }, 100);
+  });
 })();
 </script>
-
 </body>
 </html>
