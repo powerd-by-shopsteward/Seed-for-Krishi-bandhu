@@ -1958,5 +1958,99 @@ tr:hover td { background: rgba(255, 255, 255, 0.04) !important; }
   };
 })();
 </script>
+  <script>
+/* ---------- MISSING PDF & SHARE FUNCTIONS ---------- */
+function buildInvoicePDF(inv, items, cust){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  let y = 15;
+  
+  doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.setTextColor(22,163,74);
+  doc.text(SETTINGS.shop_name||'Seed Shop', 14, y); y += 6;
+  doc.setFontSize(10); doc.setFont('helvetica','normal'); doc.setTextColor(71,85,105);
+  if(SETTINGS.owner_name){ doc.text(SETTINGS.owner_name, 14, y); y += 4; }
+  if(SETTINGS.address){ doc.text(SETTINGS.address, 14, y, {maxWidth:100}); y += 4; }
+  if(SETTINGS.phone){ doc.text('Ph: '+SETTINGS.phone, 14, y); y += 4; }
+  if(SETTINGS.license){ doc.text('License: '+SETTINGS.license, 14, y); y += 4; }
+  
+  doc.setTextColor(30,41,59); doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(inv.invoice_no, 196, 15, {align:'right'});
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text(fmtDate(inv.invoice_date), 196, 21, {align:'right'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('Bill To:', 14, y+6);
+  doc.setFont('helvetica','normal');
+  doc.text(cust?.name||'Walk-in Customer', 14, y+11);
+  if(cust?.phone) doc.text(cust.phone, 14, y+16);
+  y += 22;
+  
+  doc.autoTable({
+    startY:y,
+    head:[['Item','Unit','Qty','Rate','Amount']],
+    body: items.map(it=>[it.product_name, it.unit, fmtNum(it.qty), rs(it.sell_price).replace('₹',''), rs(it.total).replace('₹','')]),
+    theme:'grid',
+    headStyles:{fillColor:[22,163,74],textColor:255,fontSize:10},
+    bodyStyles:{fontSize:9},
+    columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}},
+    margin:{left:14,right:14}
+  });
+  
+  y = doc.lastAutoTable.finalY + 8;
+  if(y > 250){ doc.addPage(); y = 20; }
+  const rightX = 196;
+  
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.text('Subtotal:', 140, y); doc.text(rs(inv.subtotal).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  if(Number(inv.discount)>0){ doc.text('Discount:', 140, y); doc.text('-'+rs(inv.discount).replace('₹',''), rightX, y, {align:'right'}); y += 5; }
+  doc.setFont('helvetica','bold'); doc.text('Total:', 140, y); doc.text(rs(inv.total).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  doc.setFont('helvetica','normal'); doc.text('Paid:', 140, y); doc.text(rs(inv.paid).replace('₹',''), rightX, y, {align:'right'}); y += 5;
+  doc.text('Due:', 140, y); doc.text(rs(inv.due).replace('₹',''), rightX, y, {align:'right'});
+  
+  return doc;
+}
+
+function downloadInvoicePDF(inv, items, cust){
+  try {
+    const doc = buildInvoicePDF(inv, items, cust);
+    doc.save(inv.invoice_no + '.pdf');
+  } catch(e) {
+    toast('PDF Error: ' + e.message, 'error');
+    console.error(e);
+  }
+}
+
+async function shareInvoicePDF(inv, items, cust){
+  try{
+    const doc = buildInvoicePDF(inv, items, cust);
+    const blob = doc.output('blob');
+    const file = new File([blob], inv.invoice_no+'.pdf', {type:'application/pdf'});
+    
+    if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({
+          files:[file], 
+          title:'Invoice '+inv.invoice_no, 
+          text:'Invoice from '+(SETTINGS.shop_name||'Seed Shop')
+        });
+      }catch(err){ 
+        if(err.name === 'AbortError') return; // User cancelled share
+        throw err; 
+      }
+    } else {
+      // Fallback for PC/Desktop where Web Share API isn't supported
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = inv.invoice_no+'.pdf'; 
+      a.click();
+      URL.revokeObjectURL(url);
+      toast('PDF downloaded — open WhatsApp to share it manually', 'info');
+    }
+  }catch(e){ 
+    toast('Share failed: ' + e.message, 'error'); 
+    console.error(e);
+  }
+}
+</script>
 </body>
 </html>
