@@ -2281,43 +2281,75 @@ html {
   scroll-behavior: smooth;
 }
 </style>
-
-<script>
+  <script>
 (function() {
-  // 1. INSTANT PILLS INJECTION (No delay)
+  // 1. Build the layout with pills
+  window.renderLayout = function() {
+    const hash = location.hash || '#/';
+    
+    const primaryNAV = [
+      ['#/', '📊', 'Dashboard'], 
+      ['#/customers', '👥', 'Customers'],
+      ['#/invoices', '📄', 'Invoices'], 
+      ['#/reports', '📈', 'Reports']
+    ];
+    const secondaryNAV = [
+      ['#/products', '📦', 'Products'], 
+      ['#/suppliers', '🚚', 'Suppliers'], 
+      ['#/profile', '⚙️', 'Shop Profile']
+    ];
+
+    const vnavHTML = primaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    const hnavHTML = secondaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    document.getElementById('app').innerHTML = `
+      <div class="layout">
+        <!-- Vertical Pills -->
+        <nav class="vertical-pill">${vnavHTML}</nav>
+        
+        <!-- Main Content -->
+        <main id="content" class="main"></main>
+        
+        <!-- Horizontal Pills -->
+        <nav class="horizontal-pill">
+          ${hnavHTML}
+          <div style="width:1px; height:32px; background:rgba(255,255,255,0.15); margin:0 8px;"></div>
+          <button id="btn-logout" class="pill-link" style="color:#f87171">
+            <span>↪</span><span class="pill-tooltip">Sign out</span>
+          </button>
+        </nav>
+      </div>`;
+      
+    document.getElementById('btn-logout').onclick = logout;
+  };
+
+  // 2. Override the router to force the pills to show up instantly
   const originalRoute = window.route;
   window.route = function() {
-    if (!document.querySelector('.vertical-pill') && SESSION) {
-      window.renderLayout();
+    if (typeof SESSION !== 'undefined' && SESSION) {
+      // If the pills aren't on the screen yet, draw them now!
+      if (!document.querySelector('.vertical-pill')) {
+        window.renderLayout();
+      }
     }
     return originalRoute.apply(this, arguments);
   };
 
-  // 2. DEBOUNCE SEARCH BARS (Stops typing lag)
-  // This intercepts keystrokes on search bars and waits 200ms before filtering the table
-  document.addEventListener('input', function(e) {
-    if (e.target.id && (e.target.id.includes('search') || e.target.id.includes('cust') || e.target.id.includes('inv') || e.target.id.includes('prod'))) {
-      clearTimeout(window.searchTimeout);
-      const target = e.target;
-      const originalValue = target.value;
-      
-      window.searchTimeout = setTimeout(() => {
-        if (target.value === originalValue) {
-          // Re-trigger the original event so the app's internal logic runs
-          const event = new Event('input', { bubbles: true });
-          target.dispatchEvent(event);
-        }
-      }, 200);
-    }
-  }, true);
-
-  // 3. Force instant layout on initial load
-  window.addEventListener('DOMContentLoaded', () => {
+  // 3. Force the app to refresh the layout immediately when it finishes loading
+  setTimeout(() => {
     if (typeof SESSION !== 'undefined' && SESSION) {
-      window.renderLayout();
+      window.route();
     }
-  });
+  }, 100);
 })();
 </script>
+
 </body>
 </html>
