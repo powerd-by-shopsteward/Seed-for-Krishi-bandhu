@@ -1900,6 +1900,16 @@ td { color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; pad
 /* 2. TRUE FOREST GREEN GLASSMORPHISM */
 .main { padding: 40px 60px 140px 140px !important; max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
 
+/* Force grids and tables to stretch fully */
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  width: 100% !important;
+}
+.card, .stat-card, .table-wrap {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+  
 /* Optional: Add a subtle background to the body so the glass has something to blur */
 body {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
