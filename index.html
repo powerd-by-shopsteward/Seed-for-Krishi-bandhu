@@ -717,7 +717,7 @@ function openStockForm(p){
   });
 }
 
-// 4. EDIT Product Name & Unit Details
+// 4. EDIT Product Name & Unit Details (UPDATED: Shows prices on edit)
 function openProductForm(existing){
   const p = existing || { name:'', base_unit:'kg', pack_unit:'bag', pack_size:50, stock:0, low_stock_alert:5 };
   const today = todayStr();
@@ -746,14 +746,16 @@ function openProductForm(existing){
         <div><label class="label">Low Stock Alert (${esc(p.base_unit)})</label><input class="input" type="number" step="any" name="low_alert" value="${p.low_stock_alert}"></div>
         <div></div>
       </div>
-      ${existing?'':`<hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
-      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">TODAY'S PRICES (effective from today)</div>
+      
+      <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0">
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:8px">CURRENT PRICES</div>
       <div class="form-grid">
         <div><label class="label">Sell Price / ${esc(p.base_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_base" required value="${sp.sell_price_base}"></div>
         <div><label class="label">Sell Price / ${esc(p.pack_unit)} (₹) *</label><input class="input" type="number" step="any" name="sell_price_pack" required value="${sp.sell_price_pack}"></div>
       </div>
       <div class="form-row"><label class="label">Cost Price / ${esc(p.base_unit)} (₹)</label><input class="input" type="number" step="any" name="cost_price_base" value="${sp.cost_price_base}"></div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 To change prices later, use the "New Price" button on the Products page.</p>`}
+      <p style="font-size:12px;color:var(--mu);margin-bottom:14px">💡 Changing prices here updates today's price. Past invoices stay unchanged.</p>
+      
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" id="pf-save">${existing?'Update':'Save'}</button>
@@ -772,14 +774,29 @@ function openProductForm(existing){
         low_stock_alert:Number(fd.get('low_alert'))||0
       };
       let prodId;
+      
       if(existing){
+        // 1. Update Product info
         const { error } = await sb.from('seeds_products').update(data).eq('id',existing.id);
         if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Update'; return; }
         prodId = existing.id;
+        
+        // 2. Update today's prices (if changed)
+        const { error:perr } = await sb.from('seeds_prices').upsert({
+          product_id:prodId, effective_date:today,
+          sell_price_base:Number(fd.get('sell_price_base'))||0,
+          sell_price_pack:Number(fd.get('sell_price_pack'))||0,
+          cost_price_base:Number(fd.get('cost_price_base'))||0
+        }, { onConflict:'product_id,effective_date' });
+        if(perr) toast('Product updated, but price failed: '+perr.message,'error');
+
       } else {
+        // 1. Insert new product
         const { data:ins, error } = await sb.from('seeds_products').insert(data).select().single();
         if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save'; return; }
         prodId = ins.id;
+        
+        // 2. Insert first price
         const { error:perr } = await sb.from('seeds_prices').upsert({
           product_id:prodId, effective_date:todayStr(),
           sell_price_base:Number(fd.get('sell_price_base'))||0,
@@ -792,7 +809,6 @@ function openProductForm(existing){
     };
   });
 }
-
 // 5. DELETE: Uses a custom modal so Chrome never blocks it
 function deleteProduct(id){
   openModal(`
