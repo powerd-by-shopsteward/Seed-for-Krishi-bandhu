@@ -1830,53 +1830,63 @@ td { color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; pad
 .sidebar, .mobile-nav, .mobile-header { display: none !important; }
 .layout { display: block !important; }
 
-/* 2. FOREST GREEN GLASSMORPHISM PILLS */
-.main { padding: 40px 60px 140px 140px !important; max-width: 1400px; margin: 0 auto; }
+/* 2. TRUE FOREST GREEN GLASSMORPHISM */
+.main { padding: 40px 60px 140px 140px !important; max-width: 1400px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* Optional: Add a subtle background to the body so the glass has something to blur */
+body {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+}
 
 .vertical-pill { 
   position: fixed; left: 30px; top: 50%; transform: translateY(-50%); 
-  background: rgba(20, 83, 45, 0.65); /* Forest Green Base */
-  backdrop-filter: blur(16px) saturate(150%); 
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  background: rgba(20, 83, 45, 0.45); /* Lower opacity for more transparency */
+  backdrop-filter: blur(24px) saturate(200%); /* Stronger blur and saturation */
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   border-radius: 40px; padding: 16px 0; 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); 
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4); /* Inner glass highlight */
   display: flex; flex-direction: column; gap: 8px; z-index: 100; 
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Glass Edge */
+  border: 1px solid rgba(255, 255, 255, 0.4); /* Bright glass edge */
 }
 
 .horizontal-pill { 
   position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
-  background: rgba(20, 83, 45, 0.65); /* Forest Green Base */
-  backdrop-filter: blur(16px) saturate(150%); 
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  background: rgba(20, 83, 45, 0.45); /* Lower opacity for more transparency */
+  backdrop-filter: blur(24px) saturate(200%); 
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
   border-radius: 40px; padding: 0 16px; 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); 
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.4); 
   display: flex; align-items: center; gap: 8px; height: 72px; z-index: 100; 
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Glass Edge */
+  border: 1px solid rgba(255, 255, 255, 0.4); 
 }
 
 .pill-link { 
   position: relative; width: 56px; height: 56px; border-radius: 50%; 
   display: flex; align-items: center; justify-content: center; 
-  color: #bbf7d0; /* Light green icons for contrast */
+  color: #ffffff; /* Pure white icons */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Slight text shadow for readability */
   font-size: 24px; text-decoration: none; transition: 0.2s; 
   background: transparent; border: none; cursor: pointer; 
 }
 
 .pill-link:hover { 
-  background: rgba(255, 255, 255, 0.1); 
-  color: #ffffff; 
+  background: rgba(255, 255, 255, 0.15); 
+  transform: scale(1.05);
 }
 
 .pill-link.active { 
-  background: rgba(74, 222, 128, 0.2); /* Glowing bright green active state */
-  color: #4ade80; 
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.3);
+  background: rgba(255, 255, 255, 0.2); /* White glass glow for active state */
+  color: #ffffff; 
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 /* The vertical divider in the bottom pill */
 .horizontal-pill > div[style*="width:1px"] {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Tooltips */
