@@ -1529,11 +1529,14 @@ function renderNewInvoice(content){
     <div class="card" style="margin-bottom:16px">
       <div class="form-grid">
         <div><label class="label">Invoice Date *</label><input class="input" type="date" id="inv-date" value="${todayStr()}" max="${todayStr()}"></div>
-        <div><label class="label">Customer</label>
-          <div style="display:flex;gap:6px">
-            <select class="input" id="inv-customer"><option value="">— Walk-in —</option>
-              ${DB.customers.map(c=>`<option value="${c.id}">${esc(c.name)}${c.phone?' · '+esc(c.phone):''}</option>`).join('')}
-            </select>
+        <div>
+          <label class="label">Customer</label>
+          <div style="display:flex; gap:6px;">
+            <div style="position:relative; flex:1;">
+              <input type="text" class="input" id="inv-cust-search" placeholder="— Walk-in / Search customer —" autocomplete="off">
+              <input type="hidden" id="inv-customer" value="">
+              <div id="inv-cust-dropdown" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; background:#fff; border:1px solid #e2e8f0; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:50; margin-top:4px;"></div>
+            </div>
             <button type="button" class="btn btn-secondary" id="btn-new-cust" style="padding:8px 12px">+</button>
           </div>
         </div>
@@ -1562,6 +1565,68 @@ function renderNewInvoice(content){
       <button class="btn btn-secondary" id="btn-save" style="padding:12px 24px">Save Invoice</button>
     </div>`;
 
+  // --- CUSTOMER SEARCH LOGIC ---
+  const custInput = $('#inv-cust-search');
+  const custDropdown = $('#inv-cust-dropdown');
+  const custHidden = $('#inv-customer');
+
+  function renderCustDropdown(query = '') {
+    const q = query.toLowerCase();
+    const matches = DB.customers.filter(c => !q || c.name.toLowerCase().includes(q) || (c.phone && c.phone.includes(q)));
+    
+    // Walk-in option
+    let html = `<div class="ss-item" data-id="" style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9; color:#64748b; font-weight:500;">— Walk-in —</div>`;
+    
+    if (matches.length) {
+      html += matches.map(c => `
+        <div class="ss-item" data-id="${c.id}" style="padding:10px 12px; cursor:pointer; border-bottom:1px solid #f1f5f9;">
+          <div style="font-weight:500; color:#0f172a;">${esc(c.name)}</div>
+          ${c.phone ? `<div style="font-size:11px; color:#64748b;">${esc(c.phone)}</div>` : ''}
+        </div>
+      `).join('');
+    } else if (q) {
+      html += `<div style="padding:12px; color:#64748b; text-align:center; font-size:13px;">No customers found</div>`;
+    }
+    
+    custDropdown.innerHTML = html;
+    custDropdown.style.display = 'block';
+
+    // Click events for items
+    custDropdown.querySelectorAll('.ss-item').forEach(item => {
+      item.onclick = () => {
+        const id = item.dataset.id;
+        custHidden.value = id;
+        selectedCustomerId = id;
+        if (id) {
+          const c = DB.customers.find(x => x.id === id);
+          custInput.value = c.name + (c.phone ? ' · ' + c.phone : '');
+        } else {
+          custInput.value = ''; // Walk-in
+        }
+        custDropdown.style.display = 'none';
+      };
+    });
+  }
+
+  custInput.addEventListener('focus', () => {
+    // Strip phone number from search on focus
+    const currentVal = custInput.value.split(' · ')[0];
+    renderCustDropdown(currentVal);
+  });
+
+  custInput.addEventListener('input', (e) => {
+    custHidden.value = ''; // Clear selection if typing
+    renderCustDropdown(e.target.value);
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!custInput.contains(e.target) && !custDropdown.contains(e.target)) {
+      custDropdown.style.display = 'none';
+    }
+  });
+
+  // --- LINE ITEMS LOGIC ---
   function renderLines(){
     const box = $('#lines-box');
     if(lines.length===0){ box.innerHTML='<div class="empty" style="padding:20px">No items added yet</div>'; updateSummary(); return; }
@@ -1581,20 +1646,18 @@ function renderNewInvoice(content){
         </tr>`).join('')}</tbody>
     </table></div>`;
     
-    // THE FIX: Only update the total text and summary, DO NOT re-render the lines
+    // Update total inline without refreshing the whole table
     $$('input[data-i]',box).forEach(inp=>inp.oninput=e=>{
       const i=+e.target.dataset.i, f=e.target.dataset.f;
       lines[i][f] = Number(e.target.value)||0;
       recalcLine(i);
       
-      // Update only this row's total cell
       const totalCell = document.getElementById(`line-total-${i}`);
       if(totalCell) totalCell.innerText = rs(lines[i].total);
       
       updateSummary();
     });
 
-    // If unit changes, we do need to re-render to fetch new prices
     $$('select[data-i]',box).forEach(sel=>sel.onchange=e=>{
       const i=+e.target.dataset.i;
       lines[i].unit = e.target.value;
@@ -1665,6 +1728,7 @@ function renderNewInvoice(content){
     renderLines();
   };
 
+  // --- QUICK ADD CUSTOMER ---
   $('#btn-new-cust').onclick = ()=>{
     openModal(`
       <h2>Quick Add Customer</h2>
@@ -1683,11 +1747,12 @@ function renderNewInvoice(content){
         const { data, error } = await sb.from('seeds_customers').insert({name:fd.get('name').trim(), phone:fd.get('phone').trim()}).select().single();
         if(error){ toast(error.message,'error'); btn.disabled=false; btn.textContent='Save & Select'; return; }
         await syncDB();
+        
+        // Automatically fill the search input
         selectedCustomerId = data.id;
-        const sel = $('#inv-customer');
-        const opt = document.createElement('option');
-        opt.value = data.id; opt.textContent = data.name + (data.phone?' · '+data.phone:'');
-        sel.appendChild(opt); sel.value = data.id;
+        custHidden.value = data.id;
+        custInput.value = data.name + (data.phone ? ' · '+data.phone : '');
+        
         toast('Customer added','success'); closeModal();
       };
     });
@@ -1711,7 +1776,9 @@ function renderNewInvoice(content){
     const total = Math.max(0, subtotal-disc);
     const paid = Number($('#inv-paid').value)||0;
     const due = Math.max(0, total-paid);
-    const custId = $('#inv-customer').value || null;
+    
+    // Get from hidden input
+    const custId = custHidden.value || null;
     const notes = $('#inv-notes').value;
 
     let maxN = 0;
