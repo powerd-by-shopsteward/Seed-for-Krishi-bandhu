@@ -1893,6 +1893,52 @@ td { color: #0f172a !important; border-bottom: 1px solid #e2e8f0 !important; pad
   .horizontal-pill { bottom: 10px; height: 60px; padding: 0 8px; gap: 4px; }
   .pill-link { width: 44px; height: 44px; font-size: 20px; }
 }
+  </style>
+
+<script>
+(function() {
+  // OVERRIDE the layout function with the pills version
+  window.renderLayout = function() {
+    const hash = location.hash || '#/';
+    
+    const primaryNAV = [
+      ['#/', '📊', 'Dashboard'], 
+      ['#/customers', '👥', 'Customers'],
+      ['#/invoices', '📄', 'Invoices'], 
+      ['#/reports', '📈', 'Reports']
+    ];
+    const secondaryNAV = [
+      ['#/products', '📦', 'Products'], 
+      ['#/suppliers', '🚚', 'Suppliers'], 
+      ['#/profile', '⚙️', 'Shop Profile']
+    ];
+
+    const vnavHTML = primaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    const hnavHTML = secondaryNAV.map(([h, i, l]) => {
+      const a = hash === h || (h !== '#/' && hash.startsWith(h)) ? 'active' : '';
+      return `<a href="${h}" class="pill-link ${a}"><span>${i}</span><span class="pill-tooltip">${l}</span></a>`;
+    }).join('');
+
+    document.getElementById('app').innerHTML = `
+      <div class="layout">
+        <nav class="vertical-pill">${vnavHTML}</nav>
+        <main id="content" class="main"></main>
+        <nav class="horizontal-pill">
+          ${hnavHTML}
+          <div style="width:1px; height:32px; background:rgba(255,255,255,0.2); margin:0 8px;"></div>
+          <button id="btn-logout" class="pill-link" style="color:#fca5a5">
+            <span>↪</span><span class="pill-tooltip">Sign out</span>
+          </button>
+        </nav>
+      </div>`;
+      
+    document.getElementById('btn-logout').onclick = logout;
+  };
+
   // FORCE the app to load the pills immediately on startup
   window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
