@@ -1518,7 +1518,7 @@ function renderInvoices(content){
 
 /* ---------- NEW INVOICE ---------- */
 function renderNewInvoice(content){
-  let lines = []; // {product_id, product_name, unit, qty, base_qty, pack_size, sell_price, cost_price, total}
+  let lines = []; 
   let selectedCustomerId = null;
 
   content.innerHTML = `
@@ -1576,16 +1576,25 @@ function renderNewInvoice(content){
           </select></td>
           <td><input class="input" type="number" step="any" data-i="${i}" data-f="qty" value="${l.qty}" style="width:90px"></td>
           <td><input class="input" type="number" step="any" data-i="${i}" data-f="sell_price" value="${l.sell_price}" style="width:110px"></td>
-          <td class="text-right" style="font-weight:600">${rs(l.total)}</td>
+          <td class="text-right" style="font-weight:600" id="line-total-${i}">${rs(l.total)}</td>
           <td class="text-right"><button class="btn btn-danger btn-sm" data-del="${i}">×</button></td>
         </tr>`).join('')}</tbody>
     </table></div>`;
+    
+    // THE FIX: Only update the total text and summary, DO NOT re-render the lines
     $$('input[data-i]',box).forEach(inp=>inp.oninput=e=>{
       const i=+e.target.dataset.i, f=e.target.dataset.f;
       lines[i][f] = Number(e.target.value)||0;
       recalcLine(i);
-      renderLines();
+      
+      // Update only this row's total cell
+      const totalCell = document.getElementById(`line-total-${i}`);
+      if(totalCell) totalCell.innerText = rs(lines[i].total);
+      
+      updateSummary();
     });
+
+    // If unit changes, we do need to re-render to fetch new prices
     $$('select[data-i]',box).forEach(sel=>sel.onchange=e=>{
       const i=+e.target.dataset.i;
       lines[i].unit = e.target.value;
@@ -1595,16 +1604,19 @@ function renderNewInvoice(content){
         lines[i].cost_price = lines[i].unit==='pack' ? Number(pr.cost_price_base)*Number(lines[i].pack_size) : Number(pr.cost_price_base);
       }
       recalcLine(i);
-      renderLines();
+      renderLines(); 
     });
+    
     $$('[data-del]',box).forEach(b=>b.onclick=()=>{ lines.splice(+b.dataset.del,1); renderLines(); });
     updateSummary();
   }
+  
   function recalcLine(i){
     const l = lines[i];
     l.base_qty = l.unit==='pack' ? Number(l.qty)*Number(l.pack_size) : Number(l.qty);
     l.total = Number(l.qty)*Number(l.sell_price);
   }
+  
   function updateSummary(){
     const subtotal = lines.reduce((s,l)=>s+l.total,0);
     const disc = Number($('#inv-disc').value)||0;
@@ -1617,6 +1629,7 @@ function renderNewInvoice(content){
       <div style="display:flex;justify-content:space-between;margin-top:4px"><span>Paid</span><span>${rs(paid)}</span></div>
       <div style="display:flex;justify-content:space-between;color:${due>0?'var(--r)':'var(--mu)'};font-weight:600"><span>Due</span><span>${rs(due)}</span></div>`;
   }
+  
   $('#inv-disc').oninput = updateSummary;
   $('#inv-paid').oninput = updateSummary;
 
@@ -1732,7 +1745,6 @@ function renderNewInvoice(content){
 
   renderLines();
 }
-
 /* ---------- INVOICE VIEW ---------- */
 function renderInvoiceView(content, id){
   const inv = DB.invoices.find(x=>x.id===id);
